@@ -23,7 +23,7 @@ class CustomWebhooks:
         self.webhooks = dict()  # type: Dict[str, WebhookBase]
 
     def register(self, app: Flask) -> None:
-        for ep in entry_points(group='alerta.webhooks'):
+        for ep in entry_points().get('alerta.webhooks', []):
             app.logger.debug(f"Server webhook '{ep.name}' found.")
             try:
                 webhook = ep.load()

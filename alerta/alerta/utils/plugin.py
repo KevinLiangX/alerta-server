@@ -30,7 +30,7 @@ class Plugins:
         self.config = app.config
 
         ep_map = {}
-        for ep in entry_points(group='alerta.plugins'):
+        for ep in entry_points().get('alerta.plugins', []):
             LOG.debug(f"Server plugin '{ep.name}' found.")
             ep_map[ep.name] = ep
 
@@ -47,7 +47,7 @@ class Plugins:
             routing_dist = self.config.get('ROUTING_DIST')
             if not routing_dist:
                 raise ImportError('ROUTING_DIST not configured')
-            routing_eps = entry_points(group='alerta.routing')
+            routing_eps = entry_points().get('alerta.routing', [])
             rules_ep = next((ep for ep in routing_eps if ep.name == 'rules'), None)
             if rules_ep is None:
                 raise PackageNotFoundError(routing_dist)
