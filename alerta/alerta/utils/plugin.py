@@ -3,8 +3,7 @@ from collections import OrderedDict
 from typing import TYPE_CHECKING
 
 from flask import Config, Flask
-from pkg_resources import (DistributionNotFound, iter_entry_points,
-                           load_entry_point)
+from importlib.metadata import PackageNotFoundError, entry_points
 
 from alerta.plugins import app
 
@@ -31,7 +30,7 @@ class Plugins:
         self.config = app.config
 
         entry_points = {}
-        for ep in iter_entry_points('alerta.plugins'):
+        for ep in entry_points(group='alerta.plugins'):
             LOG.debug(f"Server plugin '{ep.name}' found.")
             entry_points[ep.name] = ep
 
@@ -46,8 +45,12 @@ class Plugins:
         LOG.info(f"All server plugins enabled: {', '.join(self.plugins.keys())}")
         try:
             routing_dist = self.config['ROUTING_DIST']
-            self.rules = load_entry_point(routing_dist, 'alerta.routing', 'rules')  # type: ignore
-        except (DistributionNotFound, ImportError):
+            eps = entry_points(group='alerta.routing')
+            rules_ep = next((ep for ep in eps if ep.name == 'rules'), None)
+            if rules_ep is None:
+                raise PackageNotFoundError(routing_dist)
+            self.rules = rules_ep.load()  # type: ignore
+        except (PackageNotFoundError, ImportError):
             LOG.info('No plugin routing rules found. All plugins will be evaluated.')
 
     def routing(self, alert: 'Alert') -> 'Tuple[Iterable[PluginBase], Config]':
