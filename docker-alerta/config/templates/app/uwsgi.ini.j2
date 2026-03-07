@@ -13,8 +13,9 @@ max-worker-lifetime-delta = {{ env.UWSGI_WORKER_LIFETIME_DELTA }}
 
 {%- if env.UWSGI_THREADS %}
 threads = {{ env.UWSGI_THREADS }}
-enable-threads = True
 {%- endif %}
+enable-threads = true
+py-call-uwsgi-fork-hooks = true
 
 socket = 127.0.0.1:29000
 buffer-size = {{ env.UWSGI_BUFFER_SIZE }}
