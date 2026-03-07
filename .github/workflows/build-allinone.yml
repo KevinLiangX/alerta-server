@@ -1,0 +1,87 @@
+name: Build allinone image
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Target platform'
+        required: true
+        default: 'linux/amd64'
+        type: choice
+        options:
+          - linux/amd64
+          - linux/arm64
+
+env:
+  IMAGE_NAME: alerta-custom
+
+jobs:
+  build:
+    name: Build artifact
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Required for arm64 cross-compilation on amd64 runner
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Resolve version and build metadata
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(cat alerta/VERSION | tr -d '[:space:]')
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
+          echo "vcs_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          # Compose artifact filename: alerta-custom-9.0.4-amd64.tar
+          ARCH=$(echo "${{ inputs.platform }}" | sed 's|linux/||')
+          echo "artifact_name=${IMAGE_NAME}-${VERSION}-${ARCH}" >> $GITHUB_OUTPUT
+          echo "tar_path=/tmp/${IMAGE_NAME}-${VERSION}-${ARCH}.tar" >> $GITHUB_OUTPUT
+
+      # Build image and export to tar (single platform only, no registry push)
+      - name: Build image → tar
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.allinone
+          platforms: ${{ inputs.platform }}
+          build-args: |
+            BUILD_DATE=${{ steps.version.outputs.build_date }}
+            RELEASE=${{ steps.version.outputs.version }}
+            VERSION=${{ steps.version.outputs.vcs_ref }}
+          tags: ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          push: false
+          outputs: type=docker,dest=${{ steps.version.outputs.tar_path }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Upload tar as downloadable artifact (retained for 30 days)
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.artifact_name }}
+          path: ${{ steps.version.outputs.tar_path }}
+          retention-days: 30
+
+      - name: Summary
+        run: |
+          echo "### Build result" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact | \`${{ steps.version.outputs.artifact_name }}.tar\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | \`${{ steps.version.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Revision | \`${{ steps.version.outputs.vcs_ref }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | \`${{ inputs.platform }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Load on server:**" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "docker load -i ${{ steps.version.outputs.artifact_name }}.tar" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

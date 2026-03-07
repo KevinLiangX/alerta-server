@@ -1,0 +1,73 @@
+{
+  "name": "alerta-webui",
+  "version": "8.7.1",
+  "private": true,
+  "description": "Alerta web UI",
+  "scripts": {
+    "serve": "vue-cli-service serve --port 8000",
+    "build": "vue-cli-service build",
+    "format": "prettier --write '**/*.ts'",
+    "format-check": "prettier --check '**/*.ts'",
+    "lint": "vue-cli-service lint src tests",
+    "lint:nofix": "vue-cli-service lint --no-fix src tests",
+    "test:e2e": "vue-cli-service test:e2e",
+    "test:unit": "vue-cli-service test:unit",
+    "all": "npm run build && npm run format && npm run lint && npm run test:unit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alerta/alerta-webui.git"
+  },
+  "keywords": [
+    "alerta",
+    "monitoring",
+    "webui"
+  ],
+  "author": "satterly",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@alerta/vue-authenticate": "github:alerta/vue-authenticate",
+    "acorn-dynamic-import": "^4.0.0",
+    "axios": "^0.28.1",
+    "export-to-csv": "^0.2.1",
+    "lodash": "^4.17.21",
+    "moment": "^2.30.1",
+    "nunjucks": "^3.2.3",
+    "typescript-eslint-parser": "^22.0.0",
+    "vue": "^2.7.16",
+    "vue-authenticate": "github:alerta/vue-authenticate",
+    "vue-class-component": "^6.3.2",
+    "vue-i18n": "^8.28.2",
+    "vue-object-merge": "^0.1.8",
+    "vue-property-decorator": "^7.3.0",
+    "vue-router": "^3.6.5",
+    "vuetify": "^1.5.24",
+    "vuex": "^3.6.2",
+    "vuex-router-sync": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^23.3.14",
+    "@vue/cli-plugin-babel": "^4.5.15",
+    "@vue/cli-plugin-e2e-cypress": "^5.0.8",
+    "@vue/cli-plugin-eslint": "^4.5.15",
+    "@vue/cli-plugin-typescript": "^4.5.15",
+    "@vue/cli-plugin-unit-jest": "^4.5.15",
+    "@vue/cli-service": "^4.5.15",
+    "@vue/eslint-config-typescript": "^3.2.1",
+    "@vue/test-utils": "^1.2.2",
+    "babel-core": "7.0.0-bridge.0",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^5.16.0",
+    "eslint-plugin-vue": "^5.2.3",
+    "node-sass": "^7.0.0",
+    "prettier": "^2.4.1",
+    "sass-loader": "^7.3.1",
+    "stylus": "^0.54.8",
+    "stylus-loader": "^3.0.1",
+    "ts-jest": "^23.10.5",
+    "typescript": "^3.9.10",
+    "vue-cli-plugin-vuetify": "^0.4.6",
+    "vue-template-compiler": "^2.7.16",
+    "vuetify-loader": "^1.7.3"
+  }
+}
