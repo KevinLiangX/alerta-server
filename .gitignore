@@ -39,6 +39,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!alert-webui/src/components/lib/
 lib64/
 parts/
 sdist/
