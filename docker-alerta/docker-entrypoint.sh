@@ -89,7 +89,6 @@ echo Alerta WebUI  ${WEBUI_VERSION}
 
 nginx -v
 echo uwsgi $(uwsgi --version)
-mongo --version | grep MongoDB
 psql --version
 python3 --version
 /venv/bin/pip list

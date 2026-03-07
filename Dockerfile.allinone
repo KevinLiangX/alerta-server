@@ -20,7 +20,7 @@ RUN npm run build
 # =============================================================================
 # Stage 2: allinone image (nginx + uWSGI + supervisord)
 # =============================================================================
-FROM python:3.9-slim-buster
+FROM python:3.9-slim-bullseye
 
 ENV PYTHONUNBUFFERED=1
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
@@ -76,9 +76,10 @@ RUN apt-get update && \
     apt-get -y autoremove && \
     rm -rf /var/lib/apt/lists/*
 
-# ── nginx (official nginx Debian repo) ───────────────────────────────────────
-RUN curl -fsSL https://nginx.org/keys/nginx_signing.key | apt-key add - && \
-    echo "deb https://nginx.org/packages/debian/ buster nginx" | tee /etc/apt/sources.list.d/nginx.list && \
+# ── nginx (official nginx Debian repo, bullseye) ─────────────────────────────
+RUN curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor \
+        -o /etc/apt/trusted.gpg.d/nginx.gpg && \
+    echo "deb https://nginx.org/packages/debian/ bullseye nginx" | tee /etc/apt/sources.list.d/nginx.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     nginx && \
@@ -86,16 +87,7 @@ RUN curl -fsSL https://nginx.org/keys/nginx_signing.key | apt-key add - && \
     apt-get -y autoremove && \
     rm -rf /var/lib/apt/lists/*
 
-# ── MongoDB shell (for admin init scripts) ────────────────────────────────────
-# hadolint ignore=DL3008
-RUN curl -fsSL https://www.mongodb.org/static/pgp/server-4.2.asc | apt-key add - && \
-    echo "deb https://repo.mongodb.org/apt/debian buster/mongodb-org/4.2 main" | tee /etc/apt/sources.list.d/mongodb-org-4.2.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-    mongodb-org-shell && \
-    apt-get -y clean && \
-    apt-get -y autoremove && \
-    rm -rf /var/lib/apt/lists/*
+# MongoDB shell removed: 4.2 does not support bullseye; only used postgres.
 
 # ── Python virtualenv + pinned dependencies ───────────────────────────────────
 COPY docker-alerta/requirements*.txt /app/
