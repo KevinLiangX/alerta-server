@@ -16,6 +16,7 @@ threads = {{ env.UWSGI_THREADS }}
 {%- endif %}
 enable-threads = true
 py-call-uwsgi-fork-hooks = true
+lazy-apps = true
 
 socket = 127.0.0.1:29000
 buffer-size = {{ env.UWSGI_BUFFER_SIZE }}
