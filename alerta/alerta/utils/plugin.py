@@ -29,14 +29,14 @@ class Plugins:
     def register(self, app: Flask) -> None:
         self.config = app.config
 
-        entry_points = {}
+        ep_map = {}
         for ep in entry_points(group='alerta.plugins'):
             LOG.debug(f"Server plugin '{ep.name}' found.")
-            entry_points[ep.name] = ep
+            ep_map[ep.name] = ep
 
         for name in self.config['PLUGINS']:
             try:
-                plugin = entry_points[name].load()
+                plugin = ep_map[name].load()
                 if plugin:
                     self.plugins[name] = plugin()
                     LOG.info(f"Server plugin '{name}' loaded.")
@@ -44,9 +44,11 @@ class Plugins:
                 LOG.error(f"Failed to load plugin '{name}': {str(e)}")
         LOG.info(f"All server plugins enabled: {', '.join(self.plugins.keys())}")
         try:
-            routing_dist = self.config['ROUTING_DIST']
-            eps = entry_points(group='alerta.routing')
-            rules_ep = next((ep for ep in eps if ep.name == 'rules'), None)
+            routing_dist = self.config.get('ROUTING_DIST')
+            if not routing_dist:
+                raise ImportError('ROUTING_DIST not configured')
+            routing_eps = entry_points(group='alerta.routing')
+            rules_ep = next((ep for ep in routing_eps if ep.name == 'rules'), None)
             if rules_ep is None:
                 raise PackageNotFoundError(routing_dist)
             self.rules = rules_ep.load()  # type: ignore

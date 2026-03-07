@@ -36,6 +36,14 @@ for arg in "$@"; do
   esac
 done
 
+# If no REGISTRY and not --load, fall back to single-platform --load
+# (must be decided BEFORE BUILD_ARGS is assembled below)
+if [ "${LOAD_MODE}" = false ] && [ -z "${REGISTRY}" ]; then
+  echo "WARNING: REGISTRY is not set. Falling back to --load (linux/amd64)."
+  LOAD_MODE=true
+  PLATFORMS="linux/amd64"
+fi
+
 echo "========================================"
 echo "  Building alerta allinone image"
 echo "  Image:    ${IMAGE_NAME}"
@@ -69,13 +77,7 @@ if [ "${LOAD_MODE}" = true ]; then
   BUILD_ARGS+=(--load)
   echo "[local test mode] Building single-platform image and loading to local Docker..."
 else
-  if [ -z "${REGISTRY}" ]; then
-    echo "WARNING: REGISTRY is not set. Use --load for local testing, or set REGISTRY= for push."
-    BUILD_ARGS+=(--load)
-    PLATFORMS="linux/amd64"
-  else
-    BUILD_ARGS+=(--push)
-  fi
+  BUILD_ARGS+=(--push)
 fi
 
 docker buildx build "${BUILD_ARGS[@]}" "${SCRIPT_DIR}"
