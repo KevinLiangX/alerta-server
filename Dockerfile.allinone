@@ -119,6 +119,7 @@ RUN bash /app/install-plugins-local.sh
 
 # ── Frontend: copy build artifacts from stage 1 ──────────────────────────────
 COPY --from=frontend-builder /app/dist /web
+RUN rm -f /web/config.json
 
 # ── Runtime config paths ──────────────────────────────────────────────────────
 ENV ALERTA_SVR_CONF_FILE=/app/alertad.conf
