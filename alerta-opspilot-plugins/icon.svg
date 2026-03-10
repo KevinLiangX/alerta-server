@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E53935;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B71C1C;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bellGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFCCBC;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="64" height="64" rx="14" ry="14" fill="url(#bgGrad)" />
+
+  <!-- Bell body -->
+  <path d="M32 10
+    C24 10 19 16 19 24
+    L19 36
+    L14 41
+    L14 43
+    L50 43
+    L50 41
+    L45 36
+    L45 24
+    C45 16 40 10 32 10 Z"
+    fill="url(#bellGrad)" />
+
+  <!-- Bell clapper -->
+  <ellipse cx="32" cy="47" rx="5" ry="4.5" fill="url(#bellGrad)" />
+
+  <!-- Alert dot (top right of bell) -->
+  <circle cx="46" cy="14" r="6" fill="#FFD600" stroke="#B71C1C" stroke-width="1.5" />
+  <text x="46" y="18" text-anchor="middle" font-size="8" font-weight="bold" fill="#B71C1C" font-family="Arial, sans-serif">!</text>
+</svg>

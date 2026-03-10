@@ -1,9 +1,9 @@
 <template>
   <v-navigation-drawer
-    :value="sidesheet"
-    clipped
+    v-model="sidesheet"
     disable-resize-watcher
-    absolute
+    fixed
+    temporary
     hide-overlay
     width="300"
     right
@@ -436,6 +436,11 @@ export default {
   watch: {
     value(val) {
       this.sidesheet = val
+    },
+    sidesheet(val) {
+      if (!val) {
+        this.$emit('close')
+      }
     }
   },
   created() {

@@ -5,159 +5,145 @@
       :src="audioURL"
     />
 
-    <v-dialog
-      v-model="densityDialog"
-      max-width="340px"
+
+
+    <div
+      v-if="alertsByEnvironment.length > 0"
+      class="severity-strip"
     >
-      <v-form ref="form">
-        <v-card>
-          <v-card-title class="justify-center">
-            <span class="title">
-              {{ $t('ChooseDisplayDensity') }}
-            </span>
-          </v-card-title>
-          <v-card-actions class="justify-center">
-            <v-btn
-              value="comfortable"
-              :class="{ primary: displayDensity == 'comfortable' }"
-              @click="displayDensity = 'comfortable'"
-            >
-              {{ $t('Comfortable') }}
-            </v-btn>
-            <v-btn
-              value="compact"
-              :class="{ primary: displayDensity == 'compact' }"
-              @click="displayDensity = 'compact'"
-            >
-              {{ $t('Compact') }}
-            </v-btn>
-          </v-card-actions>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn
-              color="blue darken-1"
-              flat
-              @click="ok"
-            >
-              {{ $t('OK') }}
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-form>
-    </v-dialog>
-
-    <v-expand-transition>
-      <div
-        v-if="showPanel"
-        class="px-1"
-      >
-        <v-layout wrap>
-          <v-flex
-            v-for="(indicator, index) in indicators"
-            :key="index"
-            xs12
-            sm6
-            md3
-          >
-            <alert-indicator
-              :title="indicator.text"
-              :query="indicator.query"
-            />
-          </v-flex>
-        </v-layout>
-        <v-divider />
-      </div>
-    </v-expand-transition>
-
-    <v-tabs
-      v-model="currentTab"
-      class="px-1"
-      grow
-    >
-      <v-tab
-        v-for="env in environments"
-        :key="env"
-        :href="'#tab-' + env"
-        @click="setEnv(env)"
-      >
-        {{ env }}&nbsp;({{ environmentCounts[env] || 0 }})
-      </v-tab>
-      <v-spacer />
-      <v-btn
-        flat
-        icon
-        :class="{ 'filter-active': isActive }"
-        @click="sidesheet = !sidesheet"
-      >
-        <v-icon>filter_list</v-icon>
-      </v-btn>
-
       <v-menu
-        bottom
+        offset-y
         left
       >
-        <v-btn
-          slot="activator"
-          flat
-          icon
+        <template v-slot:activator="{ on, attrs }">
+          <div
+            class="d-flex align-center custom-env-menu pointer"
+            v-bind="attrs"
+            v-on="on"
+          >
+            <span class="env-key-label">环境</span>
+            <span class="env-val">{{ environ }}</span>
+            <v-icon
+              small
+              class="env-icon"
+            >
+              arrow_drop_down
+            </v-icon>
+          </div>
+        </template>
+        <v-list
+          dense
+          class="py-0"
         >
-          <v-icon>more_vert</v-icon>
-        </v-btn>
-
-        <v-list>
           <v-list-tile
-            :disabled="!indicators.length"
-            @click="showPanel = !showPanel"
+            v-for="env in environments"
+            :key="env"
+            @click="environ = env"
           >
-            <v-list-tile-title>
-              {{ showPanel ? $t('Hide') : $t('Show') }} {{ $t('Panel') }}
+            <v-list-tile-title style="font-size: 11px; font-weight: 500;">
+              {{ env }}
             </v-list-tile-title>
-          </v-list-tile>
-          <v-list-tile
-            @click="densityDialog = true"
-          >
-            {{ $t('DisplayDensity') }}
-          </v-list-tile>
-          <v-list-tile
-            @click="toCsv(alertsByEnvironment)"
-          >
-            {{ $t('DownloadAsCsv') }}
           </v-list-tile>
         </v-list>
       </v-menu>
-
-      <span class="pr-2" />
-
-      <v-tabs-items
-        v-model="currentTab"
+      <span class="strip-separator">|</span>
+      <div
+        v-for="severity in severityOrder"
+        :key="severity"
+        :class="['severity-item', 'pointer', { 'severity-active': filter.severity === severity }]"
+        @click="filterBySeverity(severity)"
       >
-        <v-tab-item
-          v-for="env in environments"
-          :key="env"
-          :value="'tab-' + env"
-          :transition="false"
-          :reverse-transition="false"
+        <v-icon
+          class="severity-dot"
+          :style="{ color: severityColor(severity) }"
         >
-          <keep-alive max="1">
-            <alert-list
-              v-if="env == filter.environment || env == 'ALL'"
-              :alerts="alertsByEnvironment"
-              @set-alert="setAlert"
-            />
-          </keep-alive>
-        </v-tab-item>
-      </v-tabs-items>
-    </v-tabs>
+          fiber_manual_record
+        </v-icon>
+        <span class="severity-count">
+          {{ counts[severity] || counts[severity.toLowerCase()] || counts[severity.charAt(0).toUpperCase() + severity.slice(1)] || 0 }}
+        </span>
+        <span class="severity-name grey--text text--darken-1">
+          {{ severity.toLowerCase() === 'informational' ? 'Info' : severity }}
+        </span>
+      </div>
+
+      <v-spacer />
+
+      <div class="header-actions">
+        <v-btn
+          flat
+          icon
+          class="ma-0"
+          :class="{ 'filter-active': isActive }"
+          @click="sidesheet = !sidesheet"
+        >
+          <v-icon>filter_list</v-icon>
+        </v-btn>
+
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              flat
+              icon
+              class="ma-0"
+              v-bind="attrs"
+              v-on="on"
+              @click="refreshAlerts"
+            >
+              <v-icon>refresh</v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('Refresh') }}</span>
+        </v-tooltip>
+
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              flat
+              icon
+              class="ma-0"
+              v-bind="attrs"
+              v-on="on"
+              @click="toCsv(alertsByEnvironment)"
+            >
+              <v-icon>cloud_download</v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('DownloadAsCsv') }}</span>
+        </v-tooltip>
+      </div>
+    </div>
+
+    <alert-list
+      :alerts="alertsByEnvironment"
+      @set-alert="setAlert"
+    />
 
     <alert-list-filter
       :value="sidesheet"
       @close="sidesheet = false"
     />
+    <v-navigation-drawer
+      v-model="detailDrawer"
+      right
+      fixed
+      temporary
+      width="800"
+      hide-overlay
+      class="elevation-4"
+    >
+      <alert-detail
+        v-if="selectedAlertId"
+        :id="selectedAlertId"
+        @close="detailDrawer = false"
+      />
+    </v-navigation-drawer>
   </div>
 </template>
 
 <script>
 import AlertList from '@/components/AlertList.vue'
+import AlertDetail from '@/components/AlertDetail.vue'
 
 import moment from 'moment'
 import { ExportToCsv } from 'export-to-csv'
@@ -167,7 +153,7 @@ import i18n from '@/plugins/i18n'
 export default {
   components: {
     AlertList,
-    AlertIndicator: () => import('@/components/AlertIndicator.vue'),
+    AlertDetail,
     AlertListFilter: () => import('@/components/AlertListFilter.vue')
   },
   props: {
@@ -188,20 +174,17 @@ export default {
     }
   },
   data: () => ({
-    currentTab: null,
-    densityDialog: false,
+    detailDrawer: false,
+    selectedAlertId: null,
     selectedId: null,
     selectedItem: {},
-    sidesheet: false,
     timer: null
   }),
   computed: {
     audioURL() {
       return this.$config.audio.new || this.$store.getters.getPreference('audioURL')
     },
-    defaultTab() {
-      return this.filter.environment ? `tab-${this.filter.environment}` : 'tab-ALL'
-    },
+
     filter() {
       return this.$store.state.alerts.filter
     },
@@ -229,21 +212,61 @@ export default {
         .filter(alert => alert.status == 'open')
         .reduce((acc, alert) => acc || !alert.repeat, false)
     },
-    showAllowedEnvs() {
-      return this.$store.getters.getPreference('showAllowedEnvs')
-    },
-    environments() {
-      return ['ALL'].concat(this.$store.getters['alerts/environments'](this.showAllowedEnvs))
-    },
-    environmentCounts() {
-      return this.$store.getters['alerts/counts']
-    },
+
     alertsByEnvironment() {
       return this.alerts.filter(alert =>
         this.filter.environment
           ? alert.environment === this.filter.environment
           : true
       )
+    },
+    severityOrder() {
+      let severities = []
+      if (this.$config.indicators && this.$config.indicators.severity) {
+        severities = this.$config.indicators.severity
+      } else {
+        const severityMap = this.$store.getters.getConfig('severity') || this.$store.getters.getConfig('alarm_model').severity
+        if (severityMap) {
+          severities = Object.keys(severityMap).sort((a, b) => severityMap[a] - severityMap[b])
+        } else {
+          severities = ['security', 'critical', 'major', 'minor', 'warning', 'indeterminate', 'unknown']
+        }
+      }
+      const ignoredSeverities = ['debug', 'trace', 'informational', 'info', 'normal', 'cleared', 'ok']
+      const filtered = severities.filter(s => !ignoredSeverities.includes(s.toLowerCase()))
+      
+      // Ensure 'indeterminate' and 'unknown' are always present as requested by user
+      if (!filtered.includes('indeterminate')) filtered.push('indeterminate')
+      if (!filtered.includes('unknown')) filtered.push('unknown')
+      
+      return filtered
+    },
+    counts() {
+      // If we have an environment selected, get its counts from the store
+      if (this.filter.environment) {
+        const env = this.$store.state.alerts.environments.find(e => e.environment === this.filter.environment)
+        return env ? env.severityCounts : {}
+      }
+      // Otherwise aggregate all environments
+      return this.$store.state.alerts.environments.reduce((acc, env) => {
+        Object.keys(env.severityCounts || {}).forEach(sev => {
+          acc[sev] = (acc[sev] || 0) + env.severityCounts[sev]
+        })
+        return acc
+      }, {})
+    },
+    environ: {
+      get() {
+        return this.filter.environment || 'ALL'
+      },
+      set(value) {
+        this.$store.dispatch('alerts/setFilter', {
+          environment: value === 'ALL' ? null : value
+        })
+      }
+    },
+    environments() {
+      return ['ALL', ...this.$store.getters['alerts/environments'](false)]
     },
     refreshInterval() {
       return (
@@ -271,33 +294,25 @@ export default {
         this.$store.dispatch('alerts/toggle', ['showPanel', value])
       }
     },
-    displayDensity: {
+    sidesheet: {
       get() {
-        return (
-          this.$store.getters.getPreference('displayDensity') ||
-          this.$store.state.alerts.displayDensity
-        )
+        return this.$store.state.alerts.sidesheet
       },
       set(value) {
-        if (this.isLoggedIn) {
-          this.$store.dispatch('setUserPrefs', {displayDensity: value})
-        } else {
-          this.$store.dispatch('alerts/set', ['displayDensity', value])
-        }
+        this.$store.dispatch('alerts/toggle', ['sidesheet', value])
       }
     },
+
     pagination() {
       return this.$store.state.alerts.pagination
     }
   },
   watch: {
-    currentTab(val) {
-      this.setPage(1)
-    },
+
     filter: {
       handler(val) {
         history.pushState(null, null, this.$store.getters['alerts/getHash'])
-        this.currentTab = this.defaultTab
+
         this.cancelTimer()
         this.refreshAlerts()
       },
@@ -331,7 +346,7 @@ export default {
       this.setSort(hashMap)
       this.setPanel(hashMap)
     }
-    this.currentTab = this.defaultTab
+
     this.setKiosk(this.isKiosk)
     this.cancelTimer()
     this.refreshAlerts()
@@ -378,13 +393,10 @@ export default {
     playSound() {
       !this.isMute && this.$refs.audio.play()
     },
-    setEnv(env) {
-      this.$store.dispatch('alerts/setFilter', {
-        environment: env === 'ALL' ? null : env
-      })
-    },
+
     setAlert(item) {
-      this.$router.push({ path: `/alert/${item.id}` })
+      this.selectedAlertId = item.id
+      this.detailDrawer = true
     },
     refreshAlerts() {
       this.getEnvironments()
@@ -400,19 +412,25 @@ export default {
         this.timer = null
       }
     },
-    ok() {
-      this.densityDialog = false
+    filterBySeverity(severity) {
+      if (this.filter.severity === severity) {
+        this.$store.dispatch('alerts/setFilter', { severity: null })
+      } else {
+        this.$store.dispatch('alerts/setFilter', { severity: severity })
+      }
     },
     toCsv(data) {
+      const filter = this.$store.state.alerts.filter
       const options = {
         fieldSeparator: ',',
-        filename: `Alerts_${this.filter.environment || 'ALL'}`,
+        filename: `Alerts_${filter.environment || 'ALL'}`,
         quoteStrings: '"',
-        decimalSeparator: 'locale',
+        decimalSeparator: '.',
         showLabels: true,
+        showTitle: false,
         useTextFile: false,
         useBom: true,
-        useKeysAsHeaders: true,
+        useKeysAsHeaders: true
       }
       let attrs = {}
       data.map(d => Object.keys(d.attributes).forEach((attr) => attrs['attributes.'+attr] = d.attributes[attr]))
@@ -426,6 +444,18 @@ export default {
         ...item,
         rawData: rawData ? rawData.toString() : ''
       })))
+    },
+    severityColor(severity) {
+      const colors = this.$store.getters.getConfig('colors')
+      if (colors && colors.severity && colors.severity[severity]) {
+        return colors.severity[severity]
+      }
+      // Fallback to alarm_model if root colors is missing
+      const alarmModel = this.$store.getters.getConfig('alarm_model')
+      if (alarmModel && alarmModel.colors && alarmModel.colors.severity && alarmModel.colors.severity[severity]) {
+        return alarmModel.colors.severity[severity]
+      }
+      return 'grey'
     }
   }
 }
@@ -443,4 +473,81 @@ export default {
   top: 9px;
   width: 8px;
 }
+.pointer {
+  cursor: pointer;
+}
+.severity-strip {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  height: 48px;
+  padding: 0 12px 0 24px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  font-size: 13px;
+  font-weight: 500;
+  gap: 0;
+  position: relative;
+  z-index: 4;
+  background-color: inherit;
+}
+
+/* "环境" label */
+.env-key-label {
+  font-size: 10px;
+  color: rgba(0,0,0,0.54);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+/* "|" separator */
+.strip-separator {
+  color: rgba(0,0,0,0.15);
+  margin: 0 8px;
+  font-size: 14px;
+  line-height: 48px;
+}
+
+/* Custom Env Menu */
+.custom-env-menu {
+  height: 48px;
+  padding: 0 4px 0 0;
+}
+.env-val {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(0,0,0,0.87);
+  line-height: 48px;
+  margin: 0 2px 0 6px;
+}
+.env-icon {
+  font-size: 16px !important;
+  color: rgba(0,0,0,0.54) !important;
+}
+
+/* Severity items */
+.severity-item {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  margin-right: 12px;
+  line-height: 48px;
+}
+.severity-dot {
+  font-size: 12px !important;
+}
+.severity-count {
+  margin-left: 2px;
+}
+.severity-name {
+  font-size: 13px;
+  text-transform: capitalize;
+  margin-left: 2px;
+}
+.severity-active {
+  background: rgba(0,0,0,0.06);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
 </style>
+

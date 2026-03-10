@@ -7,59 +7,51 @@
       <v-navigation-drawer
         v-if="isLoggedIn || !isAuthRequired || isAllowReadonly"
         v-model="drawer"
-        :clipped="$vuetify.breakpoint.lgAndUp"
+        :mini-variant="mini"
+        :clipped="true"
         disable-resize-watcher
         fixed
         app
+        width="220"
+        class="custom-drawer"
       >
-        <v-toolbar
-          :color="isDark ? '#616161' : '#eeeeee'"
-          flat
+        <v-list
+          dense
+          class="pt-2"
         >
-          <v-toolbar-side-icon @click.stop="drawer = !drawer" />
-
-          <router-link
-            to="/"
-            class="toolbar-title"
-          >
-            <img
-              v-if="$config.site_logo_url"
-              :src="$config.site_logo_url"
-              height="48"
-            >
-            <v-toolbar-title
-              v-else
-              class="logo"
-            >
-              alerta
-            </v-toolbar-title>
-          </router-link>
-        </v-toolbar>
-
-        <v-divider />
-        <v-list dense>
           <template v-for="(item, index) in items">
-            <v-list-tile
-              v-if="item.icon && item.show"
-              :key="item.text"
-              v-has-perms="item.perms"
-              :to="item.path"
-            >
-              <v-list-tile-action>
-                <v-icon>{{ item.icon }}</v-icon>
-              </v-list-tile-action>
-              <v-list-tile-content>
-                <v-list-tile-title>
-                  {{ item.text }}
-                  <v-icon
-                    v-if="item.appendIcon"
-                    small
+            <template v-if="item.icon && item.show">
+              <v-tooltip
+                :key="item.text"
+                right
+                :disabled="!mini"
+              >
+                <template v-slot:activator="{ on }">
+                  <v-list-tile
+                    v-has-perms="item.perms"
+                    :to="item.path"
+                    active-class="sidebar-active-item"
+                    v-on="on"
                   >
-                    {{ item.appendIcon }}
-                  </v-icon>
-                </v-list-tile-title>
-              </v-list-tile-content>
-            </v-list-tile>
+                    <v-list-tile-action>
+                      <v-icon>{{ item.icon }}</v-icon>
+                    </v-list-tile-action>
+                    <v-list-tile-content>
+                      <v-list-tile-title>
+                        {{ item.text }}
+                        <v-icon
+                          v-if="item.appendIcon"
+                          small
+                        >
+                          {{ item.appendIcon }}
+                        </v-icon>
+                      </v-list-tile-title>
+                    </v-list-tile-content>
+                  </v-list-tile>
+                </template>
+                <span>{{ item.text }}</span>
+              </v-tooltip>
+            </template>
 
             <v-list-group
               v-else-if="item.queries && item.queries.length > 0"
@@ -69,11 +61,19 @@
               no-action
             >
               <template v-slot:activator>
-                <v-list-tile>
-                  <v-list-tile-title>
-                    {{ item.text }}
-                  </v-list-tile-title>
-                </v-list-tile>
+                <v-tooltip
+                  right
+                  :disabled="!mini"
+                >
+                  <template v-slot:activator="{ on }">
+                    <v-list-tile v-on="on">
+                      <v-list-tile-title>
+                        {{ item.text }}
+                      </v-list-tile-title>
+                    </v-list-tile>
+                  </template>
+                  <span>{{ item.text }}</span>
+                </v-tooltip>
               </template>
               <v-list-tile
                 v-for="(q, i) in item.queries"
@@ -93,376 +93,28 @@
 
             <v-divider
               v-else-if="item.divider"
-              :key="index"
+              :key="index + '-divider'"
             />
           </template>
         </v-list>
+
+        <v-list
+          class="bottom-toggle"
+          dense
+        >
+          <v-divider />
+          <v-list-tile @click.stop="$vuetify.breakpoint.lgAndUp ? (mini = !mini) : (drawer = !drawer)">
+            <v-list-tile-action>
+              <v-icon>{{ mini ? 'chevron_right' : 'chevron_left' }}</v-icon>
+            </v-list-tile-action>
+            <v-list-tile-content v-show="!mini">
+              <v-list-tile-title>收起侧边栏</v-list-tile-title>
+            </v-list-tile-content>
+          </v-list-tile>
+        </v-list>
       </v-navigation-drawer>
-
-      <v-toolbar
-        v-if="selected.length == 0"
-        :color="isDark ? '#616161' : '#eeeeee'"
-        flat
-        class="mb-1"
-      >
-        <v-toolbar-side-icon
-          @click.stop="drawer = !drawer"
-        />
-
-        <router-link
-          to="/"
-          class="toolbar-title"
-        >
-          <img
-            v-if="$config.site_logo_url"
-            :src="$config.site_logo_url"
-            height="48"
-          >
-          <v-toolbar-title
-            v-else
-            class="logo"
-          >
-            alerta
-          </v-toolbar-title>
-        </router-link>
-
-        <v-spacer />
-
-        <v-text-field
-          v-if="$route.name === 'alerts'"
-          v-model="query"
-          :flat="!hasFocus"
-          :label="$t('Search')"
-          prepend-inner-icon="search"
-          solo
-          clearable
-          height="44"
-          class="pt-2 mr-3 hidden-sm-and-down"
-          @focus="hasFocus = true"
-          @blur="hasFocus = false"
-          @change="submitSearch"
-          @click:clear="clearSearch"
-        >
-          <template v-slot:append-outer>
-            <v-tooltip
-              bottom
-            >
-              <template v-slot:activator="{ on }">
-                <v-icon
-                  v-on="on"
-                  @click="saveSearch"
-                >
-                  push_pin
-                </v-icon>
-              </template>
-              <span>{{ $t('Save') }}</span>
-            </v-tooltip>
-          </template>
-        </v-text-field>
-
-        <div
-          v-if="$route.name === 'alerts'"
-          v-show="isLoggedIn"
-        >
-          <v-tooltip bottom>
-            <v-switch
-              slot="activator"
-              :input-value="isWatch"
-              hide-details
-              open-delay="3000"
-              @change="toggle('isWatch', $event)"
-            />
-            <span>{{ $t('Watch') }}</span>
-          </v-tooltip>
-        </div>
-
-        <v-spacer class="hidden-sm-and-down" />
-
-        <v-tooltip bottom>
-          <v-btn
-            v-show="isLoggedIn || !isAuthRequired || isAllowReadonly"
-            slot="activator"
-            icon
-            @click="toggleFullScreen"
-          >
-            <v-icon>{{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</v-icon>
-          </v-btn>
-          <span>{{ $t('FullScreen') }}</span>
-        </v-tooltip>
-
-        <v-tooltip bottom>
-          <v-btn
-            v-show="isLoggedIn || !isAuthRequired || isAllowReadonly"
-            slot="activator"
-            icon
-          >
-            <v-icon @click="refresh">
-              refresh
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Refresh') }}</span>
-        </v-tooltip>
-
-        <v-menu
-          v-show="isLoggedIn"
-          v-model="menu"
-          :close-on-content-click="false"
-          :nudge-width="200"
-          offset-x
-        >
-          <v-btn
-            slot="activator"
-            icon
-          >
-            <v-avatar
-              size="32px"
-            >
-              <img
-                v-if="avatar && !error"
-                :src="avatar"
-                @error="error = true"
-              >
-              <v-icon
-                v-else
-                v-text="navbar.signin.icon"
-              />
-            </v-avatar>
-          </v-btn>
-
-          <profile-me
-            v-if="profile"
-            :profile="profile"
-            @close="menu = false"
-          />
-        </v-menu>
-
-        <span class="hidden-xs-only">
-          <v-btn
-            v-show="!isLoggedIn && isSignupEnabled"
-            round
-            outline
-            color="primary"
-            to="/signup"
-          >
-            {{ $t('SignUp') }}
-          </v-btn>
-          <v-btn
-            v-show="!isLoggedIn"
-            round
-            color="primary"
-            to="/login"
-          >
-            {{ $t('LogIn') }}
-          </v-btn>
-        </span>
-      </v-toolbar>
-
-      <v-toolbar
-        v-if="selected.length > 0"
-        :color="isDark ? '#8e8e8e' : '#bcbcbc'"
-        class="mb-1"
-      >
-        <v-btn
-          icon
-          @click="clearSelected"
-        >
-          <v-icon>arrow_back</v-icon>
-        </v-btn>
-        <span class="hidden-sm-and-down">
-          <v-toolbar-title>
-            Back
-          </v-toolbar-title>
-        </span>
-        <v-spacer />
-
-        <span class="subheading">
-          {{ selected.length }}<span class="hidden-sm-and-down"> {{ $t('selected') }}</span>
-        </span>
-
-        <v-spacer />
-
-        <v-tooltip bottom>
-          <v-btn
-            slot="activator"
-            icon
-            class="btn--plain"
-            @click="toggleWatch()"
-          >
-            <v-icon>
-              visibility
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Watch') }}</span>
-        </v-tooltip>
-
-        <v-tooltip bottom>
-          <v-btn
-            slot="activator"
-            icon
-            class="btn--plain"
-            @click="bulkAckAlert()"
-          >
-            <v-icon>
-              check
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Ack') }}</span>
-        </v-tooltip>
-
-        <v-tooltip bottom>
-          <v-btn
-            slot="activator"
-            icon
-            class="btn--plain"
-            @click="bulkShelveAlert()"
-          >
-            <v-icon>
-              schedule
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Shelve') }}</span>
-        </v-tooltip>
-
-        <v-tooltip bottom>
-          <v-btn
-            slot="activator"
-            icon
-            class="btn--plain"
-            @click="takeBulkAction('close')"
-          >
-            <v-icon>
-              highlight_off
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Close') }}</span>
-        </v-tooltip>
-
-        <v-tooltip bottom>
-          <v-btn
-            slot="activator"
-            icon
-            class="btn--plain"
-            @click="bulkDeleteAlert()"
-          >
-            <v-icon>
-              delete
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Delete') }}</span>
-        </v-tooltip>
-
-        <v-menu
-          bottom
-          left
-        >
-          <v-btn
-            slot="activator"
-            flat
-            icon
-            small
-            class="btn--plain px-1 mx-0"
-          >
-            <v-icon small>
-              more_vert
-            </v-icon>
-          </v-btn>
-
-          <v-list
-            subheader
-          >
-            <v-subheader>Actions</v-subheader>
-            <v-divider />
-            <v-list-tile
-              v-for="(action, i) in actions"
-              :key="i"
-              @click="takeBulkAction(action)"
-            >
-              <v-list-tile-title>{{ action | splitCaps }}</v-list-tile-title>
-            </v-list-tile>
-          </v-list>
-        </v-menu>
-
-        <v-spacer />
-
-        <v-tooltip bottom>
-          <v-btn
-            v-show="isLoggedIn || !isAuthRequired || isAllowReadonly"
-            slot="activator"
-            icon
-            @click="toggleFullScreen"
-          >
-            <v-icon>{{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</v-icon>
-          </v-btn>
-          <span>{{ $t('FullScreen') }}</span>
-        </v-tooltip>
-
-        <v-tooltip bottom>
-          <v-btn
-            v-show="isLoggedIn || !isAuthRequired || isAllowReadonly"
-            slot="activator"
-            icon
-          >
-            <v-icon @click="refresh">
-              refresh
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Refresh') }}</span>
-        </v-tooltip>
-
-        <v-menu
-          v-show="isLoggedIn"
-          v-model="menu"
-          :close-on-content-click="false"
-          :nudge-width="200"
-          offset-x
-        >
-          <v-btn
-            slot="activator"
-            icon
-          >
-            <v-avatar
-              size="32px"
-            >
-              <img
-                v-if="avatar && !error"
-                :src="avatar"
-                @error="error = true"
-              >
-              <v-icon
-                v-else
-                v-text="navbar.signin.icon"
-              />
-            </v-avatar>
-          </v-btn>
-
-          <profile-me
-            v-if="profile"
-            :profile="profile"
-            @close="menu = false"
-          />
-        </v-menu>
-
-        <span class="hidden-xs-only">
-          <v-btn
-            v-show="!isLoggedIn && isSignupEnabled"
-            round
-            outline
-            color="primary"
-            disabled
-          >
-            {{ $t('SignUp') }}
-          </v-btn>
-          <v-btn
-            v-show="!isLoggedIn"
-            round
-            color="primary"
-            disabled
-          >
-            {{ $t('LogIn') }}
-          </v-btn>
-        </span>
-      </v-toolbar>
     </div>
+
 
     <v-content>
       <banner />
@@ -471,45 +123,23 @@
     </v-content>
 
     <div v-if="!isKiosk">
-      <span class="hidden-sm-and-up">
-        <v-btn
-          v-show="!isLoggedIn && isSignupEnabled"
-          block
-          round
-          outline
-          color="primary"
-          to="/signup"
-          :disabled="selected.length > 0"
-        >
-          {{ $t('SignUp') }}
-        </v-btn>
-        <v-btn
-          v-show="!isLoggedIn"
-          block
-          round
-          color="primary"
-          to="/login"
-          :disabled="selected.length > 0"
-        >
-          {{ $t('LogIn') }}
-        </v-btn>
-      </span>
+      <span class="hidden-sm-and-up" />
     </div>
   </v-app>
 </template>
 
 <script>
 import Banner from '@/components/lib/Banner.vue'
-import ProfileMe from '@/components/auth/ProfileMe.vue'
 import Snackbar from '@/components/lib/Snackbar.vue'
 
+import moment from 'moment'
+import { ExportToCsv } from 'export-to-csv'
 import i18n from '@/plugins/i18n'
 
 export default {
   name: 'App',
   components: {
     Banner,
-    ProfileMe,
     Snackbar
   },
   props: [],
@@ -519,7 +149,8 @@ export default {
     message: false,
     hints: true,
     dialog: false,
-    drawer: false,
+    drawer: true,
+    mini: false,
     navbar: {
       signin: { icon: 'account_circle', text: i18n.t('SignIn'), path: '/login' }
     },
@@ -530,7 +161,7 @@ export default {
       return [
         {
           icon: 'list',
-          text: i18n.t('Alerts'),
+          text: '告警管理',
           path: '/alerts',
           perms: 'read:alerts',
           show: true
@@ -538,97 +169,19 @@ export default {
         {
           icon: 'expand_less',
           'icon-alt': 'expand_more',
-          text: i18n.t('Searches'),
+          text: '搜索条件',
           model: false,
           queries: this.queries
         },
-        {
-          icon: 'timer',
-          text: i18n.t('Heartbeats'),
-          path: '/heartbeats',
-          perms: 'read:heartbeats',
-          show: true
-        },
-        {
-          icon: 'person',
-          text: i18n.t('Users'),
-          path: '/users',
-          perms: 'admin:users',
-          show: true
-        },
-        {
-          icon: 'people',
-          text: i18n.t('Groups'),
-          path: '/groups',
-          perms: 'read:groups',
-          show: this.$config.provider == 'basic'
-        },
-        {
-          icon: 'domain',
-          text: i18n.t('Customers'),
-          path: '/customers',
-          perms: 'read:customers',
-          show: this.$config.customer_views
-        },
-        {
-          icon: 'notifications_off',
-          text: i18n.t('Blackouts'),
-          path: '/blackouts',
-          perms: 'read:blackouts',
-          show: true
-        },
-        {
-          icon: 'security',
-          text: i18n.t('Permissions'),
-          path: '/perms',
-          perms: 'read:perms',
-          show: true
-        },
-        {
-          icon: 'vpn_key',
-          text: i18n.t('APIKeys'),
-          path: '/keys',
-          perms: 'read:keys',
-          show: this.isLoggedIn || !this.isAuthRequired
-        },
+
         {
           icon: 'assessment',
-          text: i18n.t('Reports'),
+          text: '统计报表',
           path: '/reports',
           perms: 'read:alerts',
           show: true
         },
-        { divider: true},
-        {
-          icon: 'account_circle',
-          text: i18n.t('Profile'),
-          path: '/profile',
-          perms: null,
-          show: this.isLoggedIn
-        },
-        {
-          icon: 'settings',
-          text: i18n.t('Settings'),
-          path: '/settings',
-          perms: null,
-          show: this.isLoggedIn
-        },
-        // { icon: 'chat_bubble', text: 'Send feedback' },
-        {
-          icon: 'help',
-          text: i18n.t('Help'),
-          path: '/help',
-          appendIcon: 'open_in_new',
-          perms: null,
-          show: true
-        },
-        {
-          icon: 'info',
-          text: i18n.t('About'),
-          path: '/about',
-          perms: 'read:management',
-          show: true
-        }
+        { divider: true}
       ]
     },
     isDark() {
@@ -636,6 +189,10 @@ export default {
     },
     isWatch() {
       return this.$store.state.alerts.isWatch
+    },
+    isActive() {
+      const filter = this.$store.state.alerts.filter
+      return filter.text || filter.status || filter.customer || filter.service || filter.group || filter.dateRange[0] || filter.dateRange[1]
     },
     languagePref() {
       return this.$store.getters.getPreference('languagePref')
@@ -681,6 +238,23 @@ export default {
     },
     actions() {
       return this.$config.actions
+    },
+    sidesheet: {
+      get() {
+        return this.$store.state.alerts.sidesheet
+      },
+      set(value) {
+        this.$store.dispatch('alerts/toggle', ['sidesheet', value])
+      }
+    },
+    alertsByEnvironment() {
+      const alerts = this.$store.getters['alerts/alerts']
+      const filter = this.$store.state.alerts.filter
+      return alerts.filter(alert =>
+        filter.environment
+          ? alert.environment === filter.environment
+          : true
+      )
     },
     selected() {
       return this.$store.state.alerts.selected
@@ -795,6 +369,38 @@ export default {
         this.$store.dispatch('alerts/getAlerts')
       })
     },
+    refreshAlerts() {
+      this.$store.dispatch('alerts/getAlerts')
+    },
+    toggleSidesheet() {
+      this.sidesheet = !this.sidesheet
+    },
+    toCsv(data) {
+      const filter = this.$store.state.alerts.filter
+      const options = {
+        fieldSeparator: ',',
+        filename: `Alerts_${filter.environment || 'ALL'}`,
+        quoteStrings: '"',
+        decimalSeparator: '.',
+        showLabels: true,
+        showTitle: false,
+        useTextFile: false,
+        useBom: true,
+        useKeysAsHeaders: true
+      }
+      let attrs = {}
+      data.map(d => Object.keys(d.attributes).forEach((attr) => attrs['attributes.'+attr] = d.attributes[attr]))
+
+      const csvExporter = new ExportToCsv(options)
+      csvExporter.generateCsv(data.map(({ correlate, service, tags, attributes, rawData, history, ...item }) => ({
+        correlate: correlate.join(','),
+        service: service.join(','),
+        tags: tags.join(','),
+        ...attrs,
+        ...item,
+        rawData: rawData ? rawData.toString() : ''
+      })))
+    },
     watchAlert(id) {
       this.$store.dispatch('alerts/watchAlert', id)
     },
@@ -842,8 +448,47 @@ export default {
 }
 
 .logo {
-  font-family: "Sonsie One", cursive;
-  font-size: 26px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* Sidebar Flexbox Layout & Toggle */
+.custom-drawer .v-navigation-drawer__border {
+  display: block;
+}
+.custom-drawer > .v-list:first-child {
+  height: calc(100% - 49px);
+  overflow-y: auto;
+}
+.custom-drawer .bottom-toggle {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 0;
+  background-color: inherit;
+}
+
+/* Modern Sidebar Active State */
+.sidebar-active-item {
+  position: relative;
+  background-color: var(--v-primary-base, rgba(25, 118, 210, 0.08)) !important;
+  color: var(--v-primary-base, #1976D2) !important;
+  font-weight: 500;
+}
+.sidebar-active-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--v-primary-base, #1976D2);
+  border-radius: 0 4px 4px 0;
+}
+.sidebar-active-item .v-icon {
+  color: inherit !important;
 }
 
 .btn--plain {

@@ -9,8 +9,7 @@
       :total-items="pagination.totalItems"
       :rows-per-page-items="pagination.rowsPerPageItems"
       :loading="isSearching"
-      class="alert-table"
-      :class="[ displayDensity ]"
+      class="alert-table comfortable"
       :style="columnWidths"
       sort-icon="arrow_drop_down"
       select-all
@@ -28,41 +27,36 @@
             class="text-no-wrap"
             :style="fontStyle"
           >
-            <v-checkbox
-              v-if="selectableRows"
-              v-model="props.selected"
-              primary
-              hide-details
-              color="gray"
-              class="select-box"
-              :ripple="false"
-              :size="fontSize"
-              @click.stop
-            />
-            <v-icon
-              v-else-if="props.item.trendIndication == 'moreSevere'"
-              :class="['trend-arrow', textColor(props.item.severity)]"
-              :size="fontSize"
-              @click.stop="multiselect = true; props.selected = true"
-            >
-              arrow_upward
-            </v-icon>
-            <v-icon
-              v-else-if="props.item.trendIndication == 'lessSevere'"
-              :class="['trend-arrow', textColor(props.item.severity)]"
-              :size="fontSize"
-              @click.stop="multiselect = true; props.selected = true"
-            >
-              arrow_downward
-            </v-icon>
-            <v-icon
-              v-else
-              :class="['trend-arrow', textColor(props.item.severity)]"
-              :size="fontSize"
-              @click.stop="multiselect = true; props.selected = true"
-            >
-              remove
-            </v-icon>
+            <div style="display: flex; align-items: center;">
+              <v-checkbox
+                v-model="props.selected"
+                primary
+                hide-details
+                color="gray"
+                class="select-box"
+                :ripple="false"
+                :size="fontSize"
+                @click.stop
+              />
+              <v-tooltip v-if="lastNote(props.item)" bottom max-width="300">
+                <template v-slot:activator="{ on, attrs }">
+                  <v-icon
+                    v-bind="attrs"
+                    color="amber darken-2"
+                    small
+                    v-on="on"
+                    class="ml-2"
+                  >speaker_notes</v-icon>
+                </template>
+                <div class="pa-1">
+                  <div class="mb-1" style="word-break: break-all;">{{ lastNote(props.item).text }}</div>
+                  <div class="caption grey--text text--lighten-2">
+                    <span v-if="lastNote(props.item).user && lastNote(props.item).user.toLowerCase() !== 'anonymous'">{{ lastNote(props.item).user }} · </span>
+                    <date-time :value="lastNote(props.item).updateTime" format="shortTime" />
+                  </div>
+                </div>
+              </v-tooltip>
+            </div>
           </td>
           <td
             v-for="col in $config.columns"
@@ -94,8 +88,8 @@
               v-if="col == 'severity'"
             >
               <span
-                :class="['label', 'label-' + props.item.severity.toLowerCase()]"
-                :style="fontStyle"
+                class="label"
+                :style="[fontStyle, { backgroundColor: severityColor(props.item.severity) }]"
               >
                 {{ props.item.severity | capitalize }}
               </span>
@@ -113,26 +107,6 @@
                 :style="fontStyle"
               >
                 {{ props.item.status | capitalize }}
-
-              </span>
-              <span
-                v-if="showNotesIcon"
-              >
-                <span
-                  v-if="lastNote(props.item)"
-                  class="pl-2"
-                >
-                  <v-tooltip bottom>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-icon
-                        v-bind="attrs"
-                        small
-                        v-on="on"
-                      >text_snippet</v-icon>
-                    </template>
-                    <span>{{ lastNote(props.item) }}</span>
-                  </v-tooltip>
-                </span>
               </span>
             </span>
             <span
@@ -157,11 +131,26 @@
             <span
               v-if="col == 'text'"
             >
-              <div class="fixed-table">
-                <div class="text-truncate">
-                  <span v-html="props.item.text" />
-                </div>
-              </div>
+              <v-tooltip
+                bottom
+                max-width="600px"
+              >
+                <template v-slot:activator="{ on }">
+                  <div
+                    class="fixed-table"
+                    style="cursor: pointer; max-width: 300px;"
+                    v-on="on"
+                  >
+                    <div
+                      class="text-truncate"
+                      style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"
+                    >
+                      <span v-html="props.item.text" />
+                    </div>
+                  </div>
+                </template>
+                <span v-html="props.item.text" />
+              </v-tooltip>
             </span>
             <span
               v-if="col == 'tags'"
@@ -238,8 +227,8 @@
               v-if="col == 'previousSeverity'"
             >
               <span
-                :class="['label', 'label-' + props.item.previousSeverity.toLowerCase()]"
-                :style="fontStyle"
+                class="label"
+                :style="[fontStyle, { backgroundColor: severityColor(props.item.previousSeverity) }]"
               >
                 {{ props.item.previousSeverity | capitalize }}
               </span>
@@ -287,135 +276,184 @@
               :style="{ 'background-color': severityColor(props.item.severity) }"
             >
               ...&nbsp;
-              <v-btn
-                v-if="isAcked(props.item.status) || isClosed(props.item.status)"
-                flat
-                icon
-                small
-                class="btn--plain pa-0 ma-0"
-                @click.stop="takeAction(props.item.id, 'open')"
-              >
-                <v-icon
-                  :size="fontSize"
-                >
-                  refresh
-                </v-icon>
-              </v-btn>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    v-if="isAcked(props.item.status) || isClosed(props.item.status)"
+                    v-bind="attrs"
+                    flat
+                    icon
+                    small
+                    class="btn--plain pa-0 ma-0"
+                    v-on="on"
+                    @click.stop="takeAction(props.item.id, 'open')"
+                  >
+                    <v-icon :size="fontSize">
+                      refresh
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('Open') }}</span>
+              </v-tooltip>
 
-              <v-btn
-                v-if="!isWatched(props.item.tags)"
-                flat
-                icon
-                small
-                class="btn--plain pa-0 ma-0"
-                @click.stop="watchAlert(props.item.id)"
-              >
-                <v-icon
-                  :size="fontSize"
-                >
-                  visibility
-                </v-icon>
-              </v-btn>
-              <v-btn
-                v-if="isWatched(props.item.tags)"
-                flat
-                icon
-                small
-                class="btn--plain pa-0 ma-0"
-                @click.stop="unwatchAlert(props.item.id)"
-              >
-                <v-icon
-                  :size="fontSize"
-                >
-                  visibility_off
-                </v-icon>
-              </v-btn>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    v-if="!isWatched(props.item.tags)"
+                    v-bind="attrs"
+                    flat
+                    icon
+                    small
+                    class="btn--plain pa-0 ma-0"
+                    v-on="on"
+                    @click.stop="watchAlert(props.item.id)"
+                  >
+                    <v-icon :size="fontSize">
+                      visibility
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('Watch') }}</span>
+              </v-tooltip>
 
-              <v-btn
-                v-if="isOpen(props.item.status)"
-                flat
-                icon
-                small
-                class="btn--plain pa-0 ma-0"
-                @click.stop="ackAlert(props.item.id)"
-              >
-                <v-icon
-                  :size="fontSize"
-                >
-                  check
-                </v-icon>
-              </v-btn>
-              <v-btn
-                v-if="isAcked(props.item.status)"
-                flat
-                icon
-                small
-                class="btn--plain pa-0 ma-0"
-                @click.stop="takeAction(props.item.id, 'unack')"
-              >
-                <v-icon
-                  :size="fontSize"
-                >
-                  undo
-                </v-icon>
-              </v-btn>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    v-if="isWatched(props.item.tags)"
+                    v-bind="attrs"
+                    flat
+                    icon
+                    small
+                    class="btn--plain pa-0 ma-0"
+                    v-on="on"
+                    @click.stop="unwatchAlert(props.item.id)"
+                  >
+                    <v-icon :size="fontSize">
+                      visibility_off
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('Unwatch') }}</span>
+              </v-tooltip>
 
-              <v-btn
-                v-if="isOpen(props.item.status) || isAcked(props.item.status)"
-                flat
-                icon
-                small
-                class="btn--plain pa-0 ma-0"
-                @click.stop="shelveAlert(props.item.id)"
-              >
-                <v-icon
-                  :size="fontSize"
-                >
-                  schedule
-                </v-icon>
-              </v-btn>
-              <v-btn
-                v-if="isShelved(props.item.status)"
-                flat
-                icon
-                small
-                class="btn--plain pa-0 ma-0"
-                @click.stop="takeAction(props.item.id, 'unshelve')"
-              >
-                <v-icon
-                  :size="fontSize"
-                >
-                  restore
-                </v-icon>
-              </v-btn>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    v-if="isOpen(props.item.status)"
+                    v-bind="attrs"
+                    flat
+                    icon
+                    small
+                    class="btn--plain pa-0 ma-0"
+                    v-on="on"
+                    @click.stop="ackAlert(props.item.id)"
+                  >
+                    <v-icon :size="fontSize">
+                      check
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('Ack') }}</span>
+              </v-tooltip>
 
-              <v-btn
-                v-if="!isClosed(props.item.status)"
-                flat
-                icon
-                small
-                class="btn--plain pa-0 ma-0"
-                @click.stop="takeAction(props.item.id, 'close')"
-              >
-                <v-icon
-                  :size="fontSize"
-                >
-                  highlight_off
-                </v-icon>
-              </v-btn>
-              <v-btn
-                flat
-                icon
-                small
-                class="btn--plain pa-0 ma-0"
-                @click.stop="deleteAlert(props.item.id)"
-              >
-                <v-icon
-                  :size="fontSize"
-                >
-                  delete
-                </v-icon>
-              </v-btn>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    v-if="isAcked(props.item.status)"
+                    v-bind="attrs"
+                    flat
+                    icon
+                    small
+                    class="btn--plain pa-0 ma-0"
+                    v-on="on"
+                    @click.stop="takeAction(props.item.id, 'unack')"
+                  >
+                    <v-icon :size="fontSize">
+                      undo
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('Unack') }}</span>
+              </v-tooltip>
+
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    v-if="isOpen(props.item.status) || isAcked(props.item.status)"
+                    v-bind="attrs"
+                    flat
+                    icon
+                    small
+                    class="btn--plain pa-0 ma-0"
+                    v-on="on"
+                    @click.stop="shelveAlert(props.item.id)"
+                  >
+                    <v-icon :size="fontSize">
+                      schedule
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('Shelve') }}</span>
+              </v-tooltip>
+
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    v-if="isShelved(props.item.status)"
+                    v-bind="attrs"
+                    flat
+                    icon
+                    small
+                    class="btn--plain pa-0 ma-0"
+                    v-on="on"
+                    @click.stop="takeAction(props.item.id, 'unshelve')"
+                  >
+                    <v-icon :size="fontSize">
+                      restore
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('Unshelve') }}</span>
+              </v-tooltip>
+
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    v-if="!isClosed(props.item.status)"
+                    v-bind="attrs"
+                    flat
+                    icon
+                    small
+                    class="btn--plain pa-0 ma-0"
+                    v-on="on"
+                    @click.stop="takeAction(props.item.id, 'close')"
+                  >
+                    <v-icon :size="fontSize">
+                      highlight_off
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('Close') }}</span>
+              </v-tooltip>
+
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    v-bind="attrs"
+                    flat
+                    icon
+                    small
+                    class="btn--plain pa-0 ma-0"
+                    v-on="on"
+                    @click.stop="deleteAlert(props.item.id)"
+                  >
+                    <v-icon :size="fontSize">
+                      delete
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('Delete') }}</span>
+              </v-tooltip>
               <!-- <v-btn
                 flat
                 icon
@@ -430,7 +468,7 @@
                 </v-icon>
               </v-btn> -->
 
-              <v-menu
+              <!-- <v-menu
                 bottom
                 left
               >
@@ -459,7 +497,7 @@
                     <v-list-tile-title>{{ action | splitCaps }}</v-list-tile-title>
                   </v-list-tile>
                 </v-list>
-              </v-menu>
+              </v-menu> -->
             </div>
           </td>
         </tr>
@@ -529,12 +567,7 @@ export default {
     timer: null
   }),
   computed: {
-    displayDensity() {
-      return (
-        this.$store.getters.getPreference('displayDensity') ||
-        this.$store.state.alerts.displayDensity
-      )
-    },
+
     fontStyle() {
       const font = this.$store.getters.getPreference('font')
       return {
@@ -620,8 +653,15 @@ export default {
       return expireTime.isAfter() ? expireTime.diff(moment(), 'seconds') : moment.duration()
     },
     lastNote(item) {
-      const note = item.history.filter(h => h.type == 'note' || h.type == 'dismiss').pop()
-      return note && note.type == 'note' ? note.text : ''
+      if (!item.history) return null
+      const systemTypes = ['new', 'severity', 'status', 'dismiss', 'value']
+      return item.history
+        .filter(h => {
+          if (systemTypes.includes(h.type)) return false
+          if (h.type === 'note') return true
+          return h.text && h.text.trim() !== ''
+        })
+        .pop() || null
     },
     valueWidth() {
       return this.$store.getters.getPreference('valueWidth')
@@ -638,7 +678,15 @@ export default {
         : ''
     },
     severityColor(severity) {
-      return this.$store.getters.getConfig('colors').severity[severity] || 'white'
+      const colors = this.$store.getters.getConfig('colors')
+      if (colors && colors.severity && colors.severity[severity]) {
+        return colors.severity[severity]
+      }
+      const alarmModel = this.$store.getters.getConfig('alarm_model')
+      if (alarmModel && alarmModel.colors && alarmModel.colors.severity && alarmModel.colors.severity[severity]) {
+        return alarmModel.colors.severity[severity]
+      }
+      return 'white'
     },
     selectItem(item) {
       if (!this.selected.length) {
@@ -703,10 +751,6 @@ export default {
 </script>
 
 <style>
-.alert-table .v-table th, td {
-  padding: 0px 5px !important;
-}
-
 .value-header {
   width: var(--value-width);
   min-width: var(--value-width);
@@ -760,29 +804,6 @@ div.select-box {
   border-radius: 3px;
 }
 
-.label-critical {
-  background-color: #b94a48;
-}
-
-.label-major {
-  background-color: #f89406;
-}
-
-.label-minor {
-  background-color: #ffd700;
-}
-
-.label-warning {
-  background-color: #3a87ad;
-}
-
-.label-normal,
-.label-cleared,
-.label-ok,
-.label-informational {
-  background-color: #468847;
-}
-
 .label-inverse {
   background-color: #333333;
 }
@@ -815,8 +836,17 @@ div.action-buttons {
   position: absolute;
   opacity: 0;
   right: 0;
-  top: 0.5em;
+  top: 50%;
+  transform: translateY(-50%);
   height: 2em;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+tr {
+  position: relative;
 }
 
 tr:hover div.action-buttons {

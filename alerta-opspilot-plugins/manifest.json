@@ -1,0 +1,15 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "gientech.alerta",
+    "name": "alert告警系统插件",
+    "version": "1.1.0",
+    "pluginType": "remote",
+    "description": "alerta告警系统插件",
+    "publisher": "gientech",
+    "ui": {
+        "title": "alerta告警系统插件",
+        "icon": "./icon.svg",
+        "entryUrl": "http://10.62.48.111:31854/",
+        "showInNav": true
+    }
+}

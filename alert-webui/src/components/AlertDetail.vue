@@ -9,219 +9,58 @@
       <v-toolbar
         :color="isDark ? '#616161' : '#eeeeee'"
         dense
+        flat
       >
         <v-btn
           icon
-          @click="dialog = false"
+          :title="$t('Back')"
+          @click="$emit('close')"
         >
           <v-icon>arrow_back</v-icon>
         </v-btn>
 
-        <v-tooltip bottom>
-          <v-btn
-            slot="activator"
-            :disabled="!isAcked(item.status) && !isClosed(item.status)"
-            icon
-            class="btn--plain px-1 mx-0"
-            @click="takeAction(item.id, 'open')"
-          >
-            <v-icon
-              size="20px"
-            >
-              refresh
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Open') }}</span>
-        </v-tooltip>
+        <v-toolbar-title class="subheading" style="max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          <span v-if="item && item.event">{{ item.event }}</span>
+          <span v-else>告警详情</span>
+        </v-toolbar-title>
 
-        <v-tooltip bottom>
-          <v-btn
-            v-show="!isWatched(item.tags)"
-            slot="activator"
-            icon
-            class="btn--plain px-1 mx-0"
-            @click="watchAlert(item.id)"
-          >
-            <v-icon
-              size="20px"
-            >
-              visibility
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Watch') }}</span>
-        </v-tooltip>
+        <v-spacer />
 
-        <v-tooltip bottom>
-          <v-btn
-            v-show="isWatched(item.tags)"
-            slot="activator"
-            icon
-            class="btn--plain px-1 mx-0"
-            @click="unwatchAlert(item.id)"
-          >
-            <v-icon
-              size="20px"
-            >
-              visibility_off
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Unwatch') }}</span>
-        </v-tooltip>
-
-        <v-tooltip bottom>
-          <v-btn
-            v-show="!isAcked(item.status)"
-            slot="activator"
-            :disabled="!isOpen(item.status)"
-            icon
-            class="btn--plain px-1 mx-0"
-            @click="ackAlert(item.id)"
-          >
-            <v-icon
-              size="20px"
-            >
-              check
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Ack') }}</span>
-        </v-tooltip>
-
-        <v-tooltip bottom>
-          <v-btn
-            v-show="isAcked(item.status)"
-            slot="activator"
-            icon
-            class="btn--plain px-1 mx-0"
-            @click="takeAction(item.id, 'unack')"
-          >
-            <v-icon
-              size="20px"
-            >
-              undo
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Unack') }}</span>
-        </v-tooltip>
-
-        <v-tooltip bottom>
-          <v-btn
-            v-show="!isShelved(item.status)"
-            slot="activator"
-            :disabled="!isOpen(item.status) && !isAcked(item.status)"
-            icon
-            class="btn--plain px-1 mx-0"
-            @click="shelveAlert(item.id)"
-          >
-            <v-icon
-              size="20px"
-            >
-              schedule
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Shelve') }}</span>
-        </v-tooltip>
-
-        <v-tooltip bottom>
-          <v-btn
-            v-show="isShelved(item.status)"
-            slot="activator"
-            icon
-            class="btn--plain px-1 mx-0"
-            @click="takeAction(item.id, 'unshelve')"
-          >
-            <v-icon
-              size="20px"
-            >
-              restore
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Unshelve') }}</span>
-        </v-tooltip>
-
-        <v-tooltip bottom>
-          <v-btn
-            slot="activator"
-            :disabled="isClosed(item.status)"
-            icon
-            class="btn--plain px-1 mx-0"
-            @click="takeAction(item.id, 'close')"
-          >
-            <v-icon
-              size="20px"
-            >
-              highlight_off
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Close') }}</span>
-        </v-tooltip>
-
-        <v-tooltip bottom>
-          <v-btn
-            slot="activator"
-            icon
-            class="btn--plain px-1 mx-0"
-            @click="deleteAlert(item.id)"
-          >
-            <v-icon
-              size="20px"
-            >
-              delete
-            </v-icon>
-          </v-btn>
-          <span>{{ $t('Delete') }}</span>
-        </v-tooltip>
-
-        <v-tooltip
-          :key="copyIconText"
-          bottom
+        <v-btn
+          v-if="item && !isWatched(item.tags)"
+          icon
+          :title="$t('Watch')"
+          @click="watchAlert(item.id)"
         >
-          <v-btn
-            slot="activator"
-            icon
-            class="btn--plain px-1 mx-0"
-            @click="clipboardCopy(item)"
-          >
-            <v-icon
-              size="20px"
-            >
-              content_copy
-            </v-icon>
-          </v-btn>
-          <span>{{ copyIconText }}</span>
-        </v-tooltip>
+          <v-icon>visibility</v-icon>
+        </v-btn>
 
-        <v-tooltip bottom>
-          <v-menu
-            slot="activator"
-            bottom
-            left
-          >
-            <v-btn
-              slot="activator"
-              icon
-              class="btn--plain px-1 mx-0"
-            >
-              <v-icon>
-                more_vert
-              </v-icon>
-            </v-btn>
+        <v-btn
+          v-if="item && isWatched(item.tags)"
+          icon
+          :title="$t('Unwatch')"
+          @click="unwatchAlert(item.id)"
+        >
+          <v-icon>visibility_off</v-icon>
+        </v-btn>
 
-            <v-list
-              subheader
-            >
-              <v-subheader>Actions</v-subheader>
-              <v-divider />
-              <v-list-tile
-                v-for="(action, i) in actions"
-                :key="i"
-                @click="takeAction(item.id, action)"
-              >
-                <v-list-tile-title>{{ action | splitCaps }}</v-list-tile-title>
-              </v-list-tile>
-            </v-list>
-          </v-menu>
-          <span>{{ $t('More') }}</span>
-        </v-tooltip>
+        <v-btn
+          v-if="item"
+          icon
+          :title="$t('AddNote')"
+          @click="noteDialog = true"
+        >
+          <v-icon>note_add</v-icon>
+        </v-btn>
+
+        <v-btn
+          v-if="item"
+          icon
+          :title="$t('Delete')"
+          @click="deleteAlert(item.id)"
+        >
+          <v-icon>delete</v-icon>
+        </v-btn>
       </v-toolbar>
 
       <v-card
@@ -250,7 +89,7 @@
                 class="ma-1"
                 @input="deleteNote(item.id, note.id)"
               >
-                <b>{{ note.user || 'Anonymous' }}</b> {{ $t('addedNoteOn') }}
+                <b v-if="note.user && note.user.toLowerCase() !== 'anonymous'">{{ note.user }} </b> {{ $t('addedNoteOn') }}
                 <span v-if="note.updateTime">
                   <b><date-time
                     :value="note.updateTime"
@@ -274,7 +113,7 @@
                 class="ma-1"
                 :value="true"
               >
-                <b>{{ note.user || 'Anonymous' }}</b> {{ $t('addedNoteOn') }}
+                <b v-if="note.user && note.user.toLowerCase() !== 'anonymous'">{{ note.user }} </b> {{ $t('addedNoteOn') }}
                 <b><date-time
                   v-if="note.updateTime"
                   :value="note.updateTime"
@@ -448,15 +287,12 @@
                   <div class="d-flex align-top">
                     <div class="flex xs3 text-xs-left">
                       <div class="grey--text">
-                        {{ $t('Event') }}
+                        {{ $t('Description') }}
                       </div>
                     </div>
-                    <div class="flex xs6 text-xs-left">
-                      <div
-                        class="clickable"
-                        @click="queryBy('event', item.event)"
-                      >
-                        {{ item.event }}
+                    <div class="flex xs9 text-xs-left">
+                      <div>
+                        {{ item.text }}
                       </div>
                     </div>
                   </div>
@@ -507,10 +343,16 @@
                     </div>
                     <div class="flex xs6 text-xs-left">
                       <div>
-                        <span :class="['label', 'label-' + item.previousSeverity]">
+                        <span
+                          class="label"
+                          :style="{ backgroundColor: severityColor(item.previousSeverity) }"
+                        >
                           {{ item.previousSeverity | capitalize }}
                         </span>&nbsp;&rarr;&nbsp;
-                        <span :class="['label', 'label-' + item.severity]">
+                        <span
+                          class="label"
+                          :style="{ backgroundColor: severityColor(item.severity) }"
+                        >
                           {{ item.severity | capitalize }}
                         </span>
                       </div>
@@ -574,7 +416,7 @@
                   <div class="d-flex align-top">
                     <div class="flex xs3 text-xs-left">
                       <div class="grey--text">
-                        {{ $t('Text') }}
+                        {{ $t('Description') }}
                       </div>
                     </div>
                     <div class="flex xs6 text-xs-left">
@@ -750,69 +592,49 @@
             :transition="false"
             :reverse-transition="false"
           >
-            <div class="tab-item-wrapper">
-              <v-data-table
-                :headers="headersByScreenSize"
-                :items="history"
-                item-key="index"
-                :pagination.sync="pagination"
-                sort-icon="arrow_drop_down"
-              >
-                <template
-                  slot="items"
-                  slot-scope="props"
+            <div
+              class="tab-item-wrapper"
+              style="overflow-x: auto; max-height: 80vh;"
+            >
+              <v-card-text class="pa-0">
+                <v-timeline
+                  dense
+                  clipped
                 >
-                  <td class="hidden-sm-and-down">
-                    <span class="console-text">{{ props.item.id | shortId }}</span>
-                  </td>
-                  <td
-                    class="hidden-sm-and-down text-no-wrap"
+                  <v-timeline-item
+                    v-for="(historyItem, index) in history"
+                    :key="index"
+                    class="severity-timeline-item"
+                    :class="'severity-idx-' + index"
+                    small
                   >
-                    <date-time
-                      :value="props.item.updateTime"
-                      format="mediumDate"
-                    />
-                  </td>
-                  <td
-                    class="hidden-md-and-up text-no-wrap"
-                  >
-                    <date-time
-                      :value="props.item.updateTime"
-                      format="shortTime"
-                    />
-                  </td>
-                  <td class="hidden-sm-and-down">
-                    <span :class="['label', 'label-' + props.item.severity]">
-                      {{ props.item.severity | capitalize }}
-                    </span>
-                  </td>
-                  <td class="hidden-sm-and-down">
-                    <span class="label">
-                      {{ props.item.status | capitalize }}
-                    </span>
-                  </td>
-                  <td class="hidden-sm-and-down">
-                    {{ props.item.timeout | hhmmss }}
-                  </td>
-                  <td>
-                    <span class="label">
-                      {{ props.item.type || 'unknown' | splitCaps }}
-                    </span>
-                  </td>
-                  <td class="hidden-sm-and-down">
-                    {{ props.item.event }}
-                  </td>
-                  <td class="hidden-sm-and-down">
-                    {{ props.item.value }}
-                  </td>
-                  <td>
-                    {{ props.item.user }}
-                  </td>
-                  <td>
-                    {{ props.item.text }}
-                  </td>
-                </template>
-              </v-data-table>
+                    <template slot="icon">
+                      <span
+                        class="severity-dot-circle"
+                        :style="{ backgroundColor: historyDotColor(historyItem) }"
+                        :data-severity="historyDotLabel(historyItem)"
+                      ></span>
+                    </template>
+                    <div class="history-row">
+                      <div class="history-time">
+                        <div class="history-time-main">
+                          <date-time :value="historyItem.updateTime" format="shortTime" />
+                        </div>
+                        <div class="caption grey--text history-time-date">
+                          <date-time :value="historyItem.updateTime" format="shortDate" />
+                        </div>
+                      </div>
+                      <div class="history-content">
+                        <div class="history-event">{{ historyItem.text || '—' }}</div>
+                        <div class="history-tags" style="margin-top: 4px;">
+                          <span v-if="historyItem.status" class="label mr-1">{{ historyItem.status | capitalize }}</span>
+                          <span v-if="historyItem.user && historyItem.user.toLowerCase() !== 'anonymous'" class="caption grey--text text--lighten-1">by {{ historyItem.user }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </v-timeline-item>
+                </v-timeline>
+              </v-card-text>
             </div>
           </v-tab-item>
 
@@ -830,41 +652,70 @@
               flat
             >
               <v-card-text>
-                <span class="console-text">{{ item.rawData || 'no raw data' }}</span>
+                <pre
+                  class="console-text"
+                  style="white-space: pre-wrap; word-wrap: break-word;"
+                >{{ formattedRawData }}</pre>
               </v-card-text>
             </v-card>
           </v-tab-item>
         </v-tabs>
       </v-card>
-
-      <alert-actions
-        v-if="item.id"
-        :id="item.id"
-        :status="item.status"
-        :is-watched="isWatched(item.tags)"
-        @take-action="takeAction"
-        @ack-alert="ackAlert"
-        @shelve-alert="shelveAlert"
-        @watch-alert="watchAlert"
-        @unwatch-alert="unwatchAlert"
-        @add-note="addNote"
-        @delete-alert="deleteAlert"
-      />
     </v-card>
+
+    <v-dialog
+      v-model="noteDialog"
+      max-width="500"
+    >
+      <v-card>
+        <v-card-title class="headline">
+          {{ $t('AddNote') }}
+        </v-card-title>
+        <v-card-text>
+          <v-select
+            v-model="selectedAction"
+            :items="availableActions"
+            item-text="text"
+            item-value="value"
+            :label="$t('Actions')"
+          ></v-select>
+          <v-text-field
+            v-model.trim="noteText"
+            :label="$t('Text')"
+            autofocus
+            @keyup.enter="submitNote"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            flat
+            @click="noteDialog = false"
+          >
+            {{ $t('Cancel') }}
+          </v-btn>
+          <v-btn
+            color="primary"
+            flat
+            @click="submitNote"
+          >
+            {{ $t('Submit') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-card>
 </template>
 
 <script>
 import debounce from 'lodash/debounce'
 import DateTime from './lib/DateTime'
-import AlertActions from '@/components/AlertActions'
 import i18n from '@/plugins/i18n'
 import nunjucks from 'nunjucks'
 
 export default {
   components: {
-    DateTime,
-    AlertActions
+    DateTime
   },
   props: {
     id: {
@@ -876,6 +727,9 @@ export default {
     dialog: true,
     sheet: false,
     active: null,
+    noteDialog: false,
+    noteText: '',
+    selectedAction: 'note',
     pagination: {
       rowsPerPage: 10,
       sortBy: 'updateTime',
@@ -908,8 +762,22 @@ export default {
     },
     history() {
       return this.item.history
-        ? this.item.history.map((h, index) => ({ index: index, ...h }))
+        ? this.item.history.map((h, index) => ({ index: index, ...h })).slice().reverse()
         : []
+    },
+    formattedRawData() {
+      if (!this.item.rawData) return 'no raw data'
+      if (typeof this.item.rawData === 'string') {
+        try {
+          const parsed = JSON.parse(this.item.rawData)
+          return JSON.stringify(parsed, null, 2)
+        } catch (e) {
+          return this.item.rawData
+        }
+      } else if (typeof this.item.rawData === 'object') {
+        return JSON.stringify(this.item.rawData, null, 2)
+      }
+      return this.item.rawData
     },
     notes() {
       return this.$store.state.alerts.notes
@@ -938,16 +806,48 @@ export default {
     },
     refresh() {
       return this.$store.state.refresh
+    },
+    availableActions() {
+      if (!this.item) return []
+      const actions = [{ text: this.$t('AddNote'), value: 'note' }]
+      const status = this.item.status
+
+      if (this.isOpen(status)) {
+        actions.push({ text: this.$t('Ack'), value: 'ack' })
+        actions.push({ text: this.$t('Shelve'), value: 'shelve' })
+        actions.push({ text: this.$t('Close'), value: 'close' })
+      } else if (this.isAcked(status)) {
+        actions.push({ text: this.$t('Unack'), value: 'unack' })
+        actions.push({ text: this.$t('Shelve'), value: 'shelve' })
+        actions.push({ text: this.$t('Close'), value: 'close' })
+      } else if (this.isShelved(status)) {
+        actions.push({ text: this.$t('Unshelve'), value: 'unshelve' })
+        actions.push({ text: this.$t('Close'), value: 'close' })
+      } else if (this.isClosed(status)) {
+        actions.push({ text: this.$t('Open'), value: 'open' })
+      }
+      return actions
     }
   },
   watch: {
     dialog(val) {
       val || this.close()
     },
+    id(newId) {
+      this.active = 0
+      this.getAlert(newId)
+      this.getNotes(newId)
+    },
     refresh(val) {
       if (val) {
         this.getAlert(this.id)
         this.getNotes(this.id)
+      }
+    },
+    noteDialog(val) {
+      if (!val) {
+        this.selectedAction = 'note'
+        this.noteText = ''
       }
     }
   },
@@ -1011,6 +911,22 @@ export default {
         .dispatch('alerts/addNote', [id, text])
         .then(() => this.getNotes(this.id))
     }, 200, {leading: true, trailing: false}),
+    submitNote() {
+      const id = this.item.id
+      const text = this.noteText
+      if (this.selectedAction === 'note') {
+        if (text) {
+          this.addNote(id, text)
+        }
+      } else if (this.selectedAction === 'ack') {
+        this.ackAlert(id, text)
+      } else if (this.selectedAction === 'shelve') {
+        this.shelveAlert(id, text)
+      } else {
+        this.takeAction(id, this.selectedAction, text)
+      }
+      this.noteDialog = false
+    },
     deleteAlert: debounce(function(id) {
       confirm(i18n.t('ConfirmDelete')) &&
         this.$store.dispatch('alerts/deleteAlert', id)
@@ -1038,6 +954,34 @@ export default {
       setTimeout(() => {
         this.copyIconText = i18n.t('Copy')
       }, 2000)
+    },
+    severityColor(severity) {
+      const colors = this.$store.getters.getConfig('colors')
+      if (colors && colors.severity && colors.severity[severity]) {
+        return colors.severity[severity]
+      }
+      const alarmModel = this.$store.getters.getConfig('alarm_model')
+      if (alarmModel && alarmModel.colors && alarmModel.colors.severity && alarmModel.colors.severity[severity]) {
+        return alarmModel.colors.severity[severity]
+      }
+      return 'grey'
+    },
+    historyDotColor(historyItem) {
+      if (historyItem.severity) {
+        return this.severityColor(historyItem.severity)
+      }
+      if (historyItem.type === 'note') return '#42A5F5'    // blue for notes
+      if (historyItem.type === 'action') return '#78909C'  // blue-grey for actions
+      return '#BDBDBD'
+    },
+    historyDotLabel(historyItem) {
+      if (historyItem.severity) {
+        const s = historyItem.severity
+        return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+      }
+      if (historyItem.type === 'note') return '备注'
+      if (historyItem.type === 'action') return '操作'
+      return '状态变化'
     }
   }
 }
@@ -1060,29 +1004,6 @@ export default {
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   border-radius: 3px;
-}
-
-.label-critical {
-  background-color: #b94a48;
-}
-
-.label-major {
-  background-color: #f89406;
-}
-
-.label-minor {
-  background-color: #ffd700;
-}
-
-.label-warning {
-  background-color: #3a87ad;
-}
-
-.label-normal,
-.label-cleared,
-.label-ok,
-.label-informational {
-  background-color: #468847;
 }
 
 .label-inverse {
@@ -1117,5 +1038,91 @@ div.clickable:hover, span.clickable:hover, div.link-text a:hover {
 
 #alerta .v-chip__content {
   cursor: pointer;
+}
+
+/* History Timeline Layout */
+.history-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 4px 0 8px 0;
+}
+
+.history-time {
+  min-width: 80px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.history-time-main {
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.history-time-date {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.history-content {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.4;
+}
+
+.history-event {
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.history-text {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.7);
+  word-break: break-all;
+}
+
+/* Severity-colored dot in history timeline */
+.severity-dot-circle {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+}
+
+/* CSS tooltip: label bubble */
+.severity-dot-circle::after {
+  content: attr(data-severity);
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 2px 7px;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+
+.severity-dot-circle:hover::after {
+  opacity: 1;
+}
+
+/* Override Vuetify timeline dot - remove default blue ring completely */
+.severity-timeline-item .v-timeline-item__dot,
+.severity-timeline-item .v-timeline-item__dot--small,
+.severity-timeline-item .v-timeline-item__inner-dot {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 </style>

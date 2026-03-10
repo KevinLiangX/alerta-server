@@ -1,0 +1,14 @@
+{
+    "endpoint": "http://localhost:5002",
+    "columns": [
+        "severity",
+        "status",
+        "lastReceiveTime",
+        "duplicateCount",
+        "environment",
+        "service",
+        "resource",
+        "event",
+        "text"
+    ]
+}
