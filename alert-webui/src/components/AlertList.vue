@@ -299,46 +299,6 @@
               <v-tooltip bottom>
                 <template v-slot:activator="{ on, attrs }">
                   <v-btn
-                    v-if="!isWatched(props.item.tags)"
-                    v-bind="attrs"
-                    flat
-                    icon
-                    small
-                    class="btn--plain pa-0 ma-0"
-                    v-on="on"
-                    @click.stop="watchAlert(props.item.id)"
-                  >
-                    <v-icon :size="fontSize">
-                      visibility
-                    </v-icon>
-                  </v-btn>
-                </template>
-                <span>{{ $t('Watch') }}</span>
-              </v-tooltip>
-
-              <v-tooltip bottom>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn
-                    v-if="isWatched(props.item.tags)"
-                    v-bind="attrs"
-                    flat
-                    icon
-                    small
-                    class="btn--plain pa-0 ma-0"
-                    v-on="on"
-                    @click.stop="unwatchAlert(props.item.id)"
-                  >
-                    <v-icon :size="fontSize">
-                      visibility_off
-                    </v-icon>
-                  </v-btn>
-                </template>
-                <span>{{ $t('Unwatch') }}</span>
-              </v-tooltip>
-
-              <v-tooltip bottom>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn
                     v-if="isOpen(props.item.status)"
                     v-bind="attrs"
                     flat
@@ -696,9 +656,6 @@ export default {
     isOpen(status) {
       return status == 'open' || status == 'NORM' || status == 'UNACK' || status == 'RTNUN'
     },
-    isWatched(tags) {
-      return tags ? tags.indexOf(`watch:${this.username}`) > -1 : false
-    },
     isAcked(status) {
       return status == 'ack' || status == 'ACKED'
     },
@@ -721,16 +678,6 @@ export default {
     shelveAlert: debounce(function(id) {
       this.$store
         .dispatch('alerts/takeAction', [id, 'shelve', '', this.shelveTimeout])
-        .then(() => this.$store.dispatch('alerts/getAlerts'))
-    }, 200, {leading: true, trailing: false}),
-    watchAlert: debounce(function(id) {
-      this.$store
-        .dispatch('alerts/watchAlert', id)
-        .then(() => this.$store.dispatch('alerts/getAlerts'))
-    }, 200, {leading: true, trailing: false}),
-    unwatchAlert: debounce(function(id) {
-      this.$store
-        .dispatch('alerts/unwatchAlert', id)
         .then(() => this.$store.dispatch('alerts/getAlerts'))
     }, 200, {leading: true, trailing: false}),
     deleteAlert: debounce(function(id) {

@@ -27,24 +27,6 @@
         <v-spacer />
 
         <v-btn
-          v-if="item && !isWatched(item.tags)"
-          icon
-          :title="$t('Watch')"
-          @click="watchAlert(item.id)"
-        >
-          <v-icon>visibility</v-icon>
-        </v-btn>
-
-        <v-btn
-          v-if="item && isWatched(item.tags)"
-          icon
-          :title="$t('Unwatch')"
-          @click="unwatchAlert(item.id)"
-        >
-          <v-icon>visibility_off</v-icon>
-        </v-btn>
-
-        <v-btn
           v-if="item"
           icon
           :title="$t('AddNote')"
@@ -809,7 +791,7 @@ export default {
     },
     availableActions() {
       if (!this.item) return []
-      const actions = [{ text: this.$t('AddNote'), value: 'note' }]
+      const actions = [{ text: this.$t('AddInfoOnly'), value: 'note' }]
       const status = this.item.status
 
       if (this.isOpen(status)) {
@@ -865,10 +847,6 @@ export default {
     isOpen(status) {
       return status == 'open' || status == 'NORM' || status == 'UNACK' || status == 'RTNUN'
     },
-    isWatched(tags) {
-      const tag = `watch:${this.username}`
-      return tags ? tags.indexOf(tag) > -1 : false
-    },
     isAcked(status) {
       return status == 'ack' || status == 'ACKED'
     },
@@ -894,16 +872,6 @@ export default {
     shelveAlert: debounce(function(id, text) {
       this.$store
         .dispatch('alerts/takeAction', [id, 'shelve', text, this.shelveTimeout])
-        .then(() => this.getAlert(this.id))
-    }, 200, {leading: true, trailing: false}),
-    watchAlert: debounce(function(id) {
-      this.$store
-        .dispatch('alerts/watchAlert', id)
-        .then(() => this.getAlert(this.id))
-    }, 200, {leading: true, trailing: false}),
-    unwatchAlert: debounce(function(id) {
-      this.$store
-        .dispatch('alerts/unwatchAlert', id)
         .then(() => this.getAlert(this.id))
     }, 200, {leading: true, trailing: false}),
     addNote: debounce(function(id, text) {

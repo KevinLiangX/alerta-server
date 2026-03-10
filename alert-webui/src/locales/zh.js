@@ -67,8 +67,8 @@ export const zh = {
   Unshelve: '取消搁置',
   Close: '关闭',
   Watch: '关注',
-  Unwatch: '取消关注',
   AddNote: '添加备注',
+  AddInfoOnly: '仅添加信息',
   Delete: '删除',
 
   // Alert actions

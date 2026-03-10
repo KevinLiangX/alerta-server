@@ -20,7 +20,6 @@ const state = {
   notes: [],
 
   // not persisted
-  isWatch: false,
   isKiosk: false,
   showPanel: false,
   sidesheet: false,
@@ -96,7 +95,7 @@ const mutations = {
     state[s] = v
   },
   SET_FILTER(state, filter): any {
-    state.filter = Object.assign({}, state.filter, filter)
+    Object.assign(state.filter, filter)
   },
   SET_PAGINATION(state, pagination) {
     state.pagination = Object.assign({}, state.pagination, pagination)
@@ -184,16 +183,6 @@ const actions = {
     })
   },
 
-  watchAlert({ commit, dispatch, rootState }, alertId) {
-    const username = rootState.auth.payload.preferred_username
-    const tag = `watch:${username}`
-    return AlertsApi.tagAlert(alertId, { tags: [tag] })
-  },
-  unwatchAlert({ commit, dispatch, rootState }, alertId) {
-    const username = rootState.auth.payload.preferred_username
-    const tag = `watch:${username}`
-    return AlertsApi.untagAlert(alertId, { tags: [tag] })
-  },
   takeAction({ commit, dispatch }, [alertId, action, text, timeout]) {
     return AlertsApi.actionAlert(alertId, {
       action: action,
@@ -299,14 +288,8 @@ const actions = {
 }
 
 const getters = {
-  alerts: (state, getters, rootState) => {
-    if (state.isWatch) {
-      const username = rootState.auth.payload.preferred_username
-      const tag = `watch:${username}`
-      return state.alerts.filter(a => a.tags.includes(tag))
-    } else {
-      return state.alerts
-    }
+  alerts: (state) => {
+    return state.alerts
   },
   environments:
     (state, getters, rootState) =>

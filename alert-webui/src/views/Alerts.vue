@@ -50,8 +50,7 @@
       <div
         v-for="severity in severityOrder"
         :key="severity"
-        :class="['severity-item', 'pointer', { 'severity-active': filter.severity === severity }]"
-        @click="filterBySeverity(severity)"
+        class="severity-item"
       >
         <v-icon
           class="severity-dot"
@@ -493,11 +492,12 @@ export default {
 
 /* "环境" label */
 .env-key-label {
-  font-size: 10px;
-  color: rgba(0,0,0,0.54);
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(0,0,0,0.6);
   white-space: nowrap;
   flex-shrink: 0;
-  margin-right: 4px;
+  margin-right: 6px;
 }
 
 /* "|" separator */

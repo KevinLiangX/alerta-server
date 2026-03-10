@@ -8,24 +8,6 @@
       <v-layout>
         <v-flex>
           <v-btn
-            v-show="!isWatched"
-            outline
-            color="grey darken-2"
-            @click="watchAlert"
-          >
-            <v-icon>visibility</v-icon>&nbsp;{{ $t('Watch') }}
-          </v-btn>
-
-          <v-btn
-            v-show="isWatched"
-            outline
-            color="grey darken-2"
-            @click="unwatchAlert"
-          >
-            <v-icon>visibility_off</v-icon>&nbsp;{{ $t('Unwatch') }}
-          </v-btn>
-
-          <v-btn
             v-if="!showForm"
             outline
             color="grey darken-2"
@@ -134,7 +116,7 @@
                   :class="{'black--text': isDark}"
                   @click="addNote"
                 >
-                  <v-icon>note_add</v-icon>&nbsp;{{ $t('AddNote') }}
+                  <v-icon>note_add</v-icon>&nbsp;{{ $t('AddInfoOnly') }}
                 </v-btn>
 
                 <v-spacer />
@@ -170,10 +152,6 @@ export default {
     },
     status: {
       type: String,
-      required: true
-    },
-    isWatched: {
-      type: Boolean,
       required: true
     }
   },
@@ -217,12 +195,6 @@ export default {
     shelveAlert: debounce(function() {
       this.$emit('shelve-alert', this.id, this.text)
       this.close()
-    }, 200, {leading: true, trailing: false}),
-    watchAlert: debounce(function() {
-      this.$emit('watch-alert', this.id)
-    }, 200, {leading: true, trailing: false}),
-    unwatchAlert: debounce(function() {
-      this.$emit('unwatch-alert', this.id)
     }, 200, {leading: true, trailing: false}),
     addNote: debounce(function(action) {
       this.$emit('add-note', this.id, this.text)

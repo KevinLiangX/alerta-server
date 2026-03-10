@@ -72,6 +72,7 @@ export const en = {
   Watch: 'Watch',
   Unwatch: 'Unwatch',
   AddNote: 'Add note',
+  AddInfoOnly: 'Add info only',
   Delete: 'Delete',
 
   // Alert actions
@@ -308,7 +309,7 @@ export const en = {
   TopFlappingDescription: 'Chattering and fleeting alert sources that have generated the most number of alert severity changes.',
   TopOffendersDescription: 'Frequently occurring alert sources that have generated the most number of alerts and alert duplicates.',
   TopStandingDescription: 'Stale alert sources that have active alerts for a prolonged duration.',
-  
+
   Count: 'Count',
   DuplCount: 'Dupl. Count',
   Services: 'Services',
