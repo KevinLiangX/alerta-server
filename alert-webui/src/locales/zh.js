@@ -144,6 +144,7 @@ export const zh = {
   EnvironmentDescription: '选择一个或多个环境',
   AllSeverities: '所有级别',
   SeverityDescription: '选择一个或多个严重级别',
+  ClearAll: '清除全部',
   AllStatuses: '所有状态',
   StatusDescription: '选择一个或多个状态',
   AllCustomers: '所有客户',

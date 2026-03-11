@@ -92,6 +92,7 @@
               icon
               class="ma-0"
               v-bind="attrs"
+              :loading="isRefreshing"
               v-on="on"
               @click="refreshAlerts"
             >
@@ -100,6 +101,39 @@
           </template>
           <span>{{ $t('Refresh') }}</span>
         </v-tooltip>
+
+        <v-menu
+          v-model="refreshMenu"
+          offset-y
+          left
+        >
+          <template v-slot:activator="{ on }">
+            <v-btn
+              flat
+              class="ma-0 px-2"
+              style="min-width: auto; height: 36px; text-transform: none;"
+              v-on="on"
+            >
+              <span class="caption grey--text text--darken-2">Auto: {{ selectedRefreshInterval === 0 ? 'Off' : (selectedRefreshInterval/1000) + 's' }}</span>
+              <v-icon
+                right
+                small
+                color="grey darken-2"
+              >
+                arrow_drop_down
+              </v-icon>
+            </v-btn>
+          </template>
+          <v-list dense>
+            <v-list-tile
+              v-for="option in refreshOptions"
+              :key="option.value"
+              @click="setRefreshInterval(option.value)"
+            >
+              <v-list-tile-title>{{ option.text }}</v-list-tile-title>
+            </v-list-tile>
+          </v-list>
+        </v-menu>
 
         <v-tooltip bottom>
           <template v-slot:activator="{ on, attrs }">
@@ -118,6 +152,38 @@
         </v-tooltip>
       </div>
     </div>
+
+    <!-- Filter Bar (Chips) -->
+    <v-fade-transition>
+      <div
+        v-if="activeFilters.length > 0"
+        class="filter-bar grey lighten-4"
+      >
+        <v-chip
+          v-for="f in activeFilters"
+          :key="f.id"
+          small
+          close
+          outline
+          label
+          color="primary"
+          class="filter-chip"
+          @input="removeFilter(f)"
+        >
+          <span class="font-weight-medium mr-1">{{ f.label }}:</span>
+          <span>{{ f.text }}</span>
+        </v-chip>
+        <v-btn
+          flat
+          small
+          color="grey darken-1"
+          class="text-none ml-2"
+          @click="clearAllFilters"
+        >
+          {{ $t('ClearAll') }}
+        </v-btn>
+      </div>
+    </v-fade-transition>
 
     <alert-list
       :alerts="alertsByEnvironment"
@@ -183,7 +249,18 @@ export default {
     selectedAlertId: null,
     selectedId: null,
     selectedItem: {},
-    timer: null
+    timer: null,
+    refreshMenu: false,
+    selectedRefreshInterval: 5000,
+    isRefreshing: false,
+    refreshOptions: [
+      { text: 'Off', value: 0 },
+      { text: '5s', value: 5000 },
+      { text: '10s', value: 10000 },
+      { text: '30s', value: 30000 },
+      { text: '1m', value: 60000 },
+      { text: '5m', value: 300000 }
+    ]
   }),
   computed: {
     audioURL() {
@@ -270,6 +347,24 @@ export default {
         })
       }
     },
+
+    activeFilters() {
+      const chips = []
+      if (this.filter.text) {
+        chips.push({ id: 'text', label: this.$t('Search'), text: this.filter.text, type: 'text' })
+      }
+      if (this.filter.status && this.filter.status.length > 0) {
+        this.filter.status.forEach(s => {
+          chips.push({ id: `status-${s}`, label: this.$t('Status'), text: this.$t('status_' + s), value: s, type: 'status' })
+        })
+      }
+      if (this.filter.severity && this.filter.severity.length > 0) {
+        this.filter.severity.forEach(s => {
+          chips.push({ id: `severity-${s}`, label: this.$t('Severity'), text: s.charAt(0).toUpperCase() + s.slice(1), value: s, type: 'severity' })
+        })
+      }
+      return chips
+    },
     environments() {
       return ['ALL', ...this.$store.getters['alerts/environments'](false)]
     },
@@ -353,6 +448,7 @@ export default {
     }
 
     this.setKiosk(this.isKiosk)
+    this.selectedRefreshInterval = this.refreshInterval
     this.cancelTimer()
     this.refreshAlerts()
   },
@@ -405,14 +501,55 @@ export default {
     },
     refreshAlerts() {
       this.cancelTimer()
+      this.isRefreshing = true
       this.getEnvironments()
       this.getAlerts()
         .then(() => {
+          this.isRefreshing = false
           this.isNewOpenAlerts && this.playSound()
-          if (this.autoRefresh) {
-            this.timer = setTimeout(() => this.refreshAlerts(), this.refreshInterval)
+          if (this.autoRefresh && this.selectedRefreshInterval > 0) {
+            this.timer = setTimeout(() => this.refreshAlerts(), this.selectedRefreshInterval)
           }
         })
+        .catch(() => {
+          this.isRefreshing = false
+        })
+    },
+    setRefreshInterval(val) {
+      this.selectedRefreshInterval = val
+      this.refreshAlerts()
+    },
+    removeFilter(f) {
+      this.isRefreshing = true
+      let promise
+      if (f.type === 'text') {
+        promise = this.$store.dispatch('alerts/setFilter', { text: null })
+      } else if (f.type === 'status') {
+        const newStatus = this.filter.status.filter(s => s !== f.value)
+        promise = this.$store.dispatch('alerts/setFilter', { status: newStatus.length > 0 ? newStatus : null })
+      } else if (f.type === 'severity') {
+        const newSeverity = this.filter.severity.filter(s => s !== f.value)
+        promise = this.$store.dispatch('alerts/setFilter', { severity: newSeverity.length > 0 ? newSeverity : null })
+      }
+      if (promise) {
+        promise.finally(() => {
+          this.isRefreshing = false
+        })
+      } else {
+        this.isRefreshing = false
+      }
+    },
+    clearAllFilters() {
+      this.isRefreshing = true
+      this.$store.dispatch('alerts/setFilter', {
+        text: null,
+        status: null,
+        severity: null
+      }).then(() => {
+        this.isRefreshing = false
+      }).catch(() => {
+        this.isRefreshing = false
+      })
     },
     cancelTimer() {
       if (this.timer) {
@@ -484,6 +621,12 @@ export default {
 .pointer {
   cursor: pointer;
 }
+.header-actions {
+  display: flex !important;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
 .severity-strip {
   display: flex;
   flex-wrap: nowrap;
@@ -532,6 +675,23 @@ export default {
 .env-icon {
   font-size: 16px !important;
   color: rgba(0,0,0,0.54) !important;
+}
+.filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  min-height: 40px;
+  gap: 4px;
+}
+.filter-chip {
+  height: 24px;
+  margin: 2px !important;
+  font-size: 12px;
+}
+.filter-chip .v-chip__content {
+  cursor: default;
 }
 
 /* Severity items */

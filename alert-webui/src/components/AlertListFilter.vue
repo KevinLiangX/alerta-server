@@ -79,20 +79,18 @@
           </v-flex>
 
           <v-flex
-            v-if="$config.customer_views"
             xs12
             class="pb-0"
           >
             <v-select
-              v-model="filterCustomer"
-              :items="currentCustomers"
-              :menu-props="{ maxHeight: '400' }"
-              :placeholder="$t('AllCustomers')"
-              :label="$t('Customer')"
+              v-model="filterSeverity"
+              :items="severityList"
               multiple
+              small-chips
+              :placeholder="$t('AllSeverities')"
+              :label="$t('Severity')"
               outline
               dense
-              :hint="$t('CustomerDescription')"
               persistent-hint
             />
           </v-flex>
@@ -111,24 +109,6 @@
               outline
               dense
               :hint="$t('ServiceDescription')"
-              persistent-hint
-            />
-          </v-flex>
-
-          <v-flex
-            xs12
-            class="pb-0"
-          >
-            <v-select
-              v-model="filterGroup"
-              :items="currentGroups"
-              :menu-props="{ maxHeight: '400' }"
-              :placeholder="$t('AllGroups')"
-              :label="$t('Group')"
-              multiple
-              outline
-              dense
-              :hint="$t('GroupDescription')"
               persistent-hint
             />
           </v-flex>
@@ -343,12 +323,35 @@ export default {
         'unknown': 'H'
       }
       let statusMap = this.$config.alarm_model.status || defaultStatusMap
-      return Object.keys(statusMap).sort((a, b) => {
-        return statusMap[a].localeCompare(statusMap[b])
-      }).map(status => ({
-        text: this.$t('status_' + status),
-        value: status
-      }))
+      const allowedStatuses = ['open', 'ack', 'shelved', 'closed']
+      return Object.keys(statusMap)
+        .filter(status => allowedStatuses.includes(status))
+        .sort((a, b) => {
+          return statusMap[a].localeCompare(statusMap[b])
+        }).map(status => ({
+          text: this.$t('status_' + status),
+          value: status
+        }))
+    },
+    severityList() {
+      let severities = []
+      if (this.$config.indicators && this.$config.indicators.severity) {
+        severities = this.$config.indicators.severity
+      } else {
+        const severityMap = this.$store.getters.getConfig('severity') || this.$store.getters.getConfig('alarm_model').severity
+        if (severityMap) {
+          severities = Object.keys(severityMap).sort((a, b) => severityMap[a] - severityMap[b])
+        } else {
+          severities = ['security', 'critical', 'major', 'minor', 'warning', 'indeterminate', 'unknown']
+        }
+      }
+      const ignoredSeverities = ['debug', 'trace', 'informational', 'info', 'normal', 'cleared', 'ok']
+      return severities
+        .filter(s => !ignoredSeverities.includes(s.toLowerCase()))
+        .map(s => ({
+          text: s.charAt(0).toUpperCase() + s.slice(1),
+          value: s
+        }))
     },
     currentCustomers() {
       return this.$store.getters['customers/customers']
@@ -406,6 +409,16 @@ export default {
       set(value) {
         this.$store.dispatch('alerts/setFilter', {
           group: value.length > 0 ? value : null
+        })
+      }
+    },
+    filterSeverity: {
+      get() {
+        return this.$store.state.alerts.filter.severity
+      },
+      set(value) {
+        this.$store.dispatch('alerts/setFilter', {
+          severity: value && value.length > 0 ? value : null
         })
       }
     },

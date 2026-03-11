@@ -31,7 +31,7 @@ const state = {
     // local defaults
     environment: null,
     text: null,
-    status: ['open', 'ack'],
+    status: null,
     customer: null,
     service: null,
     group: null,
@@ -117,7 +117,13 @@ const actions = {
     state.filter.customer && state.filter.customer.map(c => params.append('customer', c))
     state.filter.service && state.filter.service.map(s => params.append('service', s))
     state.filter.group && state.filter.group.map(g => params.append('group', g))
-    state.filter.severity && params.append('severity', state.filter.severity)
+    if (state.filter.severity) {
+      if (Array.isArray(state.filter.severity)) {
+        state.filter.severity.map(s => params.append('severity', s))
+      } else {
+        params.append('severity', state.filter.severity)
+      }
+    }
 
     // add server-side sorting
     let sortBy = state.pagination.sortBy
@@ -229,7 +235,13 @@ const actions = {
     state.filter.customer && state.filter.customer.map(c => params.append('customer', c))
     state.filter.service && state.filter.service.map(s => params.append('service', s))
     state.filter.group && state.filter.group.map(g => params.append('group', g))
-    state.filter.severity && params.append('severity', state.filter.severity)
+    if (state.filter.severity) {
+      if (Array.isArray(state.filter.severity)) {
+        state.filter.severity.map(s => params.append('severity', s))
+      } else {
+        params.append('severity', state.filter.severity)
+      }
+    }
 
     // apply any date/time filters
     if (state.filter.dateRange[0] > 0) {
@@ -273,11 +285,19 @@ const actions = {
   set({ commit }, [s, v]) {
     commit('SET_SETTING', { s, v })
   },
-  setFilter({ commit }, filter) {
+  setFilter({ commit, dispatch }, filter) {
     commit('SET_FILTER', filter)
+    return Promise.all([
+      dispatch('getAlerts'),
+      dispatch('getEnvironments')
+    ])
   },
-  resetFilter({ commit, rootState }) {
+  resetFilter({ commit, dispatch, rootState }) {
     commit('SET_FILTER', rootState.config.filter)
+    return Promise.all([
+      dispatch('getAlerts'),
+      dispatch('getEnvironments')
+    ])
   },
   setPagination({ commit }, pagination) {
     commit('SET_PAGINATION', pagination)

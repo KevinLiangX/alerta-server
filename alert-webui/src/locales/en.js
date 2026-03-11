@@ -147,6 +147,7 @@ export const en = {
   EnvironmentDescription: 'Choose one or more environment',
   AllSeverities: 'All severities',
   SeverityDescription: 'Choose one or more severity',
+  ClearAll: 'Clear All',
   AllStatuses: 'All statuses',
   StatusDescription: 'Choose one or more status',
   AllCustomers: 'All customers',
