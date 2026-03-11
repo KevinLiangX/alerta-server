@@ -352,7 +352,7 @@
                     <div class="flex xs6 text-xs-left">
                       <div>
                         <span class="label">
-                          {{ item.status | capitalize }}
+                          {{ $t('status_' + item.status) }}
                         </span>
                         <span
                           v-if="statusNote && statusNote.user"
@@ -609,7 +609,7 @@
                       <div class="history-content">
                         <div class="history-event">{{ historyItem.text || '—' }}</div>
                         <div class="history-tags" style="margin-top: 4px;">
-                          <span v-if="historyItem.status" class="label mr-1">{{ historyItem.status | capitalize }}</span>
+                          <span v-if="historyItem.status" class="label mr-1">{{ $t('status_' + historyItem.status) }}</span>
                           <span v-if="historyItem.user && historyItem.user.toLowerCase() !== 'anonymous'" class="caption grey--text text--lighten-1">by {{ historyItem.user }}</span>
                         </div>
                       </div>

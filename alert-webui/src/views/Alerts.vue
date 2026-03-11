@@ -8,7 +8,6 @@
 
 
     <div
-      v-if="alertsByEnvironment.length > 0"
       class="severity-strip"
     >
       <v-menu
@@ -69,15 +68,22 @@
       <v-spacer />
 
       <div class="header-actions">
-        <v-btn
-          flat
-          icon
-          class="ma-0"
-          :class="{ 'filter-active': isActive }"
-          @click="sidesheet = !sidesheet"
-        >
-          <v-icon>filter_list</v-icon>
-        </v-btn>
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              flat
+              icon
+              class="ma-0"
+              :class="{ 'filter-active': isActive }"
+              v-bind="attrs"
+              v-on="on"
+              @click="sidesheet = !sidesheet"
+            >
+              <v-icon>filter_list</v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('Filters') }}</span>
+        </v-tooltip>
 
         <v-tooltip bottom>
           <template v-slot:activator="{ on, attrs }">
@@ -398,11 +404,14 @@ export default {
       this.detailDrawer = true
     },
     refreshAlerts() {
+      this.cancelTimer()
       this.getEnvironments()
       this.getAlerts()
         .then(() => {
           this.isNewOpenAlerts && this.playSound()
-          this.timer = setTimeout(() => this.refreshAlerts(), this.refreshInterval)
+          if (this.autoRefresh) {
+            this.timer = setTimeout(() => this.refreshAlerts(), this.refreshInterval)
+          }
         })
     },
     cancelTimer() {

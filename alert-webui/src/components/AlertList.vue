@@ -19,7 +19,7 @@
         slot-scope="props"
       >
         <tr
-          :style="{ 'background-color': severityColor(props.item.severity) }"
+          :style="{ 'border-left': `4px solid ${severityColor(props.item.severity)}` }"
           class="hover-lighten"
           @click="selectItem(props.item)"
         >
@@ -36,6 +36,7 @@
                 class="select-box"
                 :ripple="false"
                 :size="fontSize"
+                :disabled="selected.length > 0 && selected[0].status !== props.item.status"
                 @click.stop
               />
               <v-tooltip v-if="lastNote(props.item)" bottom max-width="300">
@@ -61,7 +62,7 @@
           <td
             v-for="col in $config.columns"
             :key="col"
-            :class="['text-no-wrap', textColor(props.item.severity)]"
+            class="text-no-wrap"
             :style="fontStyle"
           >
             <span
@@ -106,7 +107,7 @@
                 class="label"
                 :style="fontStyle"
               >
-                {{ props.item.status | capitalize }}
+                {{ $t('status_' + props.item.status) }}
               </span>
             </span>
             <span
@@ -268,13 +269,8 @@
               {{ lastNote(props.item) }}
             </span>
           </td>
-          <td
-            :class="['text-no-wrap', textColor(props.item.severity)]"
-          >
-            <div
-              class="action-buttons"
-              :style="{ 'background-color': severityColor(props.item.severity) }"
-            >
+          <td class="text-no-wrap">
+            <div class="action-buttons">
               ...&nbsp;
               <v-tooltip bottom>
                 <template v-slot:activator="{ on, attrs }">
@@ -584,6 +580,10 @@ export default {
         return this.$store.state.alerts.selected
       },
       set(value) {
+        if (value.length > 0) {
+          const lockedStatus = value[0].status
+          value = value.filter(item => item.status === lockedStatus)
+        }
         this.$store.dispatch('alerts/updateSelected', value)
       }
     },
@@ -628,14 +628,6 @@ export default {
     },
     textWidth() {
       return this.$store.getters.getPreference('textWidth')
-    },
-    textColor(severity) {
-      if (this.severityColor(severity) === 'black' || this.severityColor(severity) === '#000000') {
-        return 'white--text'
-      }
-      return this.$store.getters.getConfig('colors').text
-        ? `${this.$store.getters.getConfig('colors').text}--text`
-        : ''
     },
     severityColor(severity) {
       const colors = this.$store.getters.getConfig('colors')

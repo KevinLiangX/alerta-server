@@ -73,6 +73,15 @@ export const en = {
   Unwatch: 'Unwatch',
   AddNote: 'Add note',
   AddInfoOnly: 'Add info only',
+  status_open: 'Open',
+  status_assign: 'Assigned',
+  status_ack: 'Acked',
+  status_closed: 'Closed',
+  status_expired: 'Expired',
+  status_unknown: 'Unknown',
+  status_shelved: 'Shelved',
+  status_blackout: 'Blackout',
+  Submit: 'Submit',
   Delete: 'Delete',
 
   // Alert actions

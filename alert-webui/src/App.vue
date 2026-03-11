@@ -120,6 +120,83 @@
       <banner />
       <router-view />
       <snackbar />
+
+      <!-- Bulk Actions FAB -->
+      <v-slide-y-reverse-transition>
+        <div v-if="selected.length > 0 && !isKiosk" class="bulk-fab-container">
+          <div class="bulk-fab-bar primary elevation-6">
+            <span class="subheading font-weight-medium mr-3 white--text">已选择 {{ selected.length }} 项</span>
+            <v-divider vertical dark class="mx-2"></v-divider>
+            
+            <v-btn flat dark small @click="takeBulkAction('open')" class="white--text" v-if="isBulkClosed">
+              <v-icon left>refresh</v-icon> {{ $t('status_open') }}
+            </v-btn>
+            <v-btn flat dark small @click="bulkAckAlert" class="white--text" v-if="isBulkOpen">
+              <v-icon left>check</v-icon> {{ $t('status_ack') }}
+            </v-btn>
+            <v-btn flat dark small @click="takeBulkAction('unack')" class="white--text" v-if="isBulkAcked">
+              <v-icon left>undo</v-icon> {{ $t('Unack') }}
+            </v-btn>
+            <v-btn flat dark small @click="takeBulkAction('unshelve')" class="white--text" v-if="isBulkShelved">
+              <v-icon left>restore</v-icon> {{ $t('Unshelve') }}
+            </v-btn>
+            <v-btn flat dark small @click="bulkShelveAlert" class="white--text" v-if="isBulkOpen || isBulkAcked">
+              <v-icon left>schedule</v-icon> {{ $t('status_shelved') }}
+            </v-btn>
+            <v-btn flat dark small @click="takeBulkAction('close')" class="white--text" v-if="isBulkOpen || isBulkAcked || isBulkShelved">
+              <v-icon left>highlight_off</v-icon> {{ $t('status_closed') }}
+            </v-btn>
+            
+            <v-btn flat dark small @click="dialogNote = true" class="white--text">
+              <v-icon left>note_add</v-icon> {{ $t('AddNote') }}
+            </v-btn>
+            
+            <v-menu offset-y top>
+              <template v-slot:activator="{ on }">
+                <v-btn flat dark small v-on="on" class="white--text">
+                  更多 <v-icon right>arrow_drop_up</v-icon>
+                </v-btn>
+              </template>
+              <v-list dense>
+                <v-list-tile @click="bulkDeleteAlert">
+                  <v-list-tile-title class="red--text text--darken-2">
+                    <v-icon left color="red darken-2" small>delete</v-icon> {{ $t('Delete') }}
+                  </v-list-tile-title>
+                </v-list-tile>
+              </v-list>
+            </v-menu>
+
+            <v-divider vertical dark class="mx-2"></v-divider>
+            <v-btn icon dark small @click="clearSelected" class="ma-0">
+              <v-icon>close</v-icon>
+            </v-btn>
+          </div>
+        </div>
+      </v-slide-y-reverse-transition>
+
+      <!-- Batch Add Note Dialog -->
+      <v-dialog v-model="dialogNote" max-width="500px">
+        <v-card>
+          <v-card-title>
+            <span class="headline">批量添加备注</span>
+          </v-card-title>
+          <v-card-text>
+            <v-text-field
+              v-model.trim="noteText"
+              :label="$t('AddNote')"
+              prepend-icon="edit"
+              required
+              @keyup.enter="bulkAddNote"
+            ></v-text-field>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue darken-1" flat @click="dialogNote = false">{{ $t('Cancel') }}</v-btn>
+            <v-btn color="blue darken-1" flat @click="bulkAddNote" :disabled="!noteText">{{ $t('Submit') }}</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
     </v-content>
 
     <div v-if="!isKiosk">
@@ -149,6 +226,8 @@ export default {
     message: false,
     hints: true,
     dialog: false,
+    dialogNote: false,
+    noteText: '',
     drawer: true,
     mini: false,
     navbar: {
@@ -259,6 +338,21 @@ export default {
     selected() {
       return this.$store.state.alerts.selected
     },
+    bulkStatus() {
+      return this.selected.length > 0 ? this.selected[0].status : null
+    },
+    isBulkOpen() {
+      return this.bulkStatus == 'open' || this.bulkStatus == 'NORM' || this.bulkStatus == 'UNACK' || this.bulkStatus == 'RTNUN'
+    },
+    isBulkAcked() {
+      return this.bulkStatus == 'ack' || this.bulkStatus == 'ACKED'
+    },
+    isBulkShelved() {
+      return this.bulkStatus == 'shelved' || this.bulkStatus == 'SHLVD'
+    },
+    isBulkClosed() {
+      return this.bulkStatus == 'closed' || this.bulkStatus == 'OK'
+    },
     ackTimeout() {
       return this.$store.getters.getPreference('ackTimeout')
     },
@@ -321,33 +415,50 @@ export default {
       this.$store.dispatch('removeUserQuery', query)
     },
     takeBulkAction(action) {
-      Promise.all(this.selected.map(a => this.$store.dispatch('alerts/takeAction', [a.id, action, '']))).then(() => {
+      let filtered = this.selected
+      if (action === 'close') {
+        filtered = this.selected.filter(a => a.status !== 'closed' && a.status !== 'OK')
+      }
+      Promise.all(filtered.map(a => this.$store.dispatch('alerts/takeAction', [a.id, action, '']))).then(() => {
         this.clearSelected()
         this.$store.dispatch('alerts/getAlerts')
       })
     },
     bulkAckAlert() {
-      this.selected.map(a => {
-        this.$store
-          .dispatch('alerts/takeAction', [
-            a.id,
-            'ack',
-            '',
-            this.ackTimeout
-          ])
+      const filtered = this.selected.filter(a => a.status !== 'ack' && a.status !== 'ACKED' && a.status !== 'closed')
+      Promise.all(filtered.map(a => 
+        this.$store.dispatch('alerts/takeAction', [
+          a.id,
+          'ack',
+          '',
+          this.ackTimeout
+        ])
+      )).then(() => {
+        this.clearSelected()
+        this.$store.dispatch('alerts/getAlerts')
       })
-        .reduce(() => this.clearSelected())
+    },
+    bulkAddNote() {
+      if (!this.noteText) return
+      Promise.all(this.selected.map(a => 
+        this.$store.dispatch('alerts/addNote', [a.id, this.noteText])
+      )).then(() => {
+        this.dialogNote = false
+        this.noteText = ''
+        this.clearSelected()
+        this.$store.dispatch('alerts/getAlerts')
+      })
     },
     bulkShelveAlert() {
-      Promise.all(this.selected.map(a => {
-        this.$store
-          .dispatch('alerts/takeAction', [
-            a.id,
-            'shelve',
-            '',
-            this.shelveTimeout
-          ])
-      })).then(() => {
+      const filtered = this.selected.filter(a => a.status !== 'shelved' && a.status !== 'SHLVD' && a.status !== 'closed')
+      Promise.all(filtered.map(a => 
+        this.$store.dispatch('alerts/takeAction', [
+          a.id,
+          'shelve',
+          '',
+          this.shelveTimeout
+        ])
+      )).then(() => {
         this.clearSelected()
         this.$store.dispatch('alerts/getAlerts')
       })
@@ -441,6 +552,27 @@ export default {
 <style>
 
 @import "./assets/css/fonts.css";
+
+.bulk-fab-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100 !important;
+}
+
+.bulk-fab-bar {
+  border-radius: 8px !important;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+}
+
+.bulk-fab-bar .v-btn {
+  text-transform: none;
+  font-weight: 500;
+  margin: 0 2px;
+}
 
 .toolbar-title {
   color: inherit;

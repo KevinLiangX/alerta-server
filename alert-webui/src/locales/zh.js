@@ -67,8 +67,18 @@ export const zh = {
   Unshelve: '取消搁置',
   Close: '关闭',
   Watch: '关注',
+  Unwatch: '取消关注',
   AddNote: '添加备注',
   AddInfoOnly: '仅添加信息',
+  status_open: '待处理',
+  status_assign: '已指派',
+  status_ack: '已确认',
+  status_closed: '已关闭',
+  status_expired: '已失效',
+  status_unknown: '未知',
+  status_shelved: '已搁置',
+  status_blackout: '维护中',
+  Submit: '确认',
   Delete: '删除',
 
   // Alert actions

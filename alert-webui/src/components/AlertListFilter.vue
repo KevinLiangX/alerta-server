@@ -65,6 +65,8 @@
             <v-select
               v-model="filterStatus"
               :items="statusList"
+              item-text="text"
+              item-value="value"
               small-chips
               :placeholder="$t('AllStatuses')"
               :label="$t('Status')"
@@ -343,7 +345,10 @@ export default {
       let statusMap = this.$config.alarm_model.status || defaultStatusMap
       return Object.keys(statusMap).sort((a, b) => {
         return statusMap[a].localeCompare(statusMap[b])
-      })
+      }).map(status => ({
+        text: this.$t('status_' + status),
+        value: status
+      }))
     },
     currentCustomers() {
       return this.$store.getters['customers/customers']
