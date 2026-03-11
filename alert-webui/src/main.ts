@@ -2,13 +2,13 @@ import bootstrap from './services/config'
 
 import Vue from 'vue'
 
-import {createStore} from './store'
-import {createRouter} from './router'
-import {sync} from 'vuex-router-sync'
+import { createStore } from './store'
+import { createRouter } from './router'
+import { sync } from 'vuex-router-sync'
 import axios from 'axios'
-import {makeStore} from '@/store/modules/auth.store'
-import {makeInterceptors} from '@/services/api/interceptors'
-import {vueAuth} from '@/services/auth'
+import { makeStore } from '@/store/modules/auth.store'
+import { makeInterceptors } from '@/services/api/interceptors'
+import { vueAuth } from '@/services/auth'
 import GoogleAnalytics from '@/plugins/analytics'
 import i18n from '@/plugins/i18n'
 
@@ -34,9 +34,12 @@ bootstrap.getConfig().then(config => {
 
   Vue.prototype.$config = config
   store.dispatch('updateConfig', config)
-  store.dispatch('alerts/setFilter', config.filter)
   store.registerModule('auth', makeStore(vueAuth(config)))
   axios.defaults.baseURL = config.endpoint
+  // Apply backend config filter, but exclude `status` so the frontend
+  // store's default status (['open', 'ack', 'shelved']) always takes effect.
+  const { status: _ignore, ...filterWithoutStatus } = config.filter || {}
+  store.dispatch('alerts/setFilter', filterWithoutStatus)
 
   const interceptors = makeInterceptors(router)
   axios.interceptors.request.use(interceptors.requestIdHeader, undefined)

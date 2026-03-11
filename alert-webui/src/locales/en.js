@@ -314,6 +314,18 @@ export const en = {
   // Reports
   Top: 'Top',
   Flapping: 'Flapping',
+  Offender: 'Offender',
+  Offenders: 'Offenders',
+  Standing: 'Standing',
+  Longest: 'Longest',
+  Changes: 'Changes',
+  TopFlappingDescription: 'Alert sources that change severity frequently (the most unstable alerts).',
+  TopOffendersDescription: 'Top sources of alerts (the noisiest alert sources).',
+  TopStandingDescription: 'Alert sources with the longest active alerts.',
+
+  Count: 'Count',
+  DuplCount: 'Dupl. Count',
+  Flapping: 'Flapping',
   Offenders: 'Offenders',
   Standing: 'Standing',
   TopFlappingDescription: 'Chattering and fleeting alert sources that have generated the most number of alert severity changes.',

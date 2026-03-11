@@ -31,7 +31,7 @@ const state = {
     // local defaults
     environment: null,
     text: null,
-    status: null,
+    status: ['open', 'ack','shelved'],
     customer: null,
     service: null,
     group: null,

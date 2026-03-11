@@ -13,32 +13,28 @@
       <v-data-table
         :headers="headers"
         :items="top10"
-        class="px-2"
+        class="px-2 pb-2"
         hide-actions
+        :no-data-text="$t('NoDataAvailable')"
       >
         <template
           slot="items"
           slot-scope="props"
         >
-          <td>{{ props.item.event }}</td>
-          <td class="text-xs-center">
-            {{ props.item.count }}
+          <td class="py-2">
+            <div class="font-weight-medium mb-1">{{ props.item.event }}</div>
+            <div class="caption grey--text text-truncate" style="max-width: 300px;">
+              {{ props.item.resources.map(r => r.resource).join(', ') }}
+            </div>
           </td>
-          <td class="text-xs-center">
+          <td class="text-xs-left">
+            <span class="font-weight-bold">{{ props.item.count }}</span>
+          </td>
+          <td class="text-xs-center grey--text">
             {{ props.item.duplicateCount }}
           </td>
-          <td>{{ props.item.environments.join(', ') }}</td>
-          <td>{{ props.item.services.join(', ') }}</td>
-          <td>
-            <span
-              v-for="r in props.item.resources"
-              :key="r.id"
-            >
-              <router-link :to="`/alert/${r.id}`">
-                {{ r.resource }}
-              </router-link>
-            </span>
-          </td>
+          <td class="caption">{{ props.item.environments.join(', ') }}</td>
+          <td class="caption">{{ props.item.services.join(', ') }}</td>
         </template>
       </v-data-table>
     </v-card>
@@ -80,7 +76,8 @@ export default {
     },
     refresh() {
       return this.$store.state.refresh
-    }
+    },
+
   },
   watch: {
     filter: {

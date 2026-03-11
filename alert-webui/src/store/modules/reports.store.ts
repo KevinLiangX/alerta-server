@@ -12,7 +12,7 @@ const state = {
   filter: {
     environment: null,
     severity: null,
-    status: ['open', 'ack'],
+    status: ['open', 'ack', 'shelved'],
     customer: null,
     service: null,
     group: null,
@@ -86,26 +86,26 @@ function getParams(state) {
 }
 
 const actions = {
-  getTopOffenders({commit, state}) {
+  getTopOffenders({ commit, state }) {
     let params = getParams(state)
-    return AlertsApi.getTop10Count(params).then(({top10}) => commit('SET_TOP_OFFENDERS', top10))
+    return AlertsApi.getTop10Count(params).then(({ top10 }) => commit('SET_TOP_OFFENDERS', top10))
   },
-  getTopFlapping({commit, state}) {
+  getTopFlapping({ commit, state }) {
     let params = getParams(state)
-    return AlertsApi.getTop10Flapping(params).then(({top10}) => commit('SET_TOP_FLAPPING', top10))
+    return AlertsApi.getTop10Flapping(params).then(({ top10 }) => commit('SET_TOP_FLAPPING', top10))
   },
-  getTopStanding({commit, state}) {
+  getTopStanding({ commit, state }) {
     let params = getParams(state)
-    return AlertsApi.getTop10Standing(params).then(({top10}) => commit('SET_TOP_STANDING', top10))
+    return AlertsApi.getTop10Standing(params).then(({ top10 }) => commit('SET_TOP_STANDING', top10))
   },
 
-  setFilter({commit}, filter) {
+  setFilter({ commit }, filter) {
     commit('SET_FILTER', filter)
   },
-  resetFilter({commit, rootState}) {
+  resetFilter({ commit, rootState }) {
     commit('SET_FILTER', rootState.config.filter)
   },
-  setPageSize({commit}, rowsPerPage) {
+  setPageSize({ commit }, rowsPerPage) {
     commit('SET_PAGE_SIZE', rowsPerPage)
   }
 }

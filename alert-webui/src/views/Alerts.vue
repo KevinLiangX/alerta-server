@@ -442,6 +442,9 @@ export default {
     this.setSearch(this.query)
     if (this.hash) {
       let hashMap = utils.fromHash(this.hash)
+      // Always ignore status from URL hash — let the store's default take effect.
+      // This ensures the default ['open', 'ack', 'shelved'] is always applied on load.
+      delete hashMap.status
       this.setFilter(hashMap)
       this.setSort(hashMap)
       this.setPanel(hashMap)
@@ -460,15 +463,22 @@ export default {
       this.$store.dispatch('alerts/updateQuery', query)
     },
     setFilter(filter) {
-      this.$store.dispatch('alerts/setFilter', {
-        environment: filter.environment,
-        text: filter.text,
-        status: filter.status ? filter.status.split(',') : null,
-        customer: filter.customer ? filter.customer.split(',') : null,
-        service: filter.service ? filter.service.split(',') : null,
-        group: filter.group ? filter.group.split(',') : null,
-        dateRange: filter.dateRange ? filter.dateRange.split(',').map(n => n ? parseInt(n) : null) : [null, null]
-      })
+      // Only override store defaults if the field is explicitly present in the hash.
+      // This prevents old/stale URL hashes from wiping out the store's default values
+      // (e.g., a hash with only status:open,ack wouldn't clear the default 'shelved').
+      const update = {}
+      if ('environment' in filter) update.environment = filter.environment || null
+      if ('text' in filter) update.text = filter.text || null
+      if ('status' in filter) update.status = filter.status ? filter.status.split(',') : null
+      if ('customer' in filter) update.customer = filter.customer ? filter.customer.split(',') : null
+      if ('service' in filter) update.service = filter.service ? filter.service.split(',') : null
+      if ('group' in filter) update.group = filter.group ? filter.group.split(',') : null
+      if ('dateRange' in filter) {
+        update.dateRange = filter.dateRange
+          ? filter.dateRange.split(',').map(n => n ? parseInt(n) : null)
+          : [null, null]
+      }
+      this.$store.dispatch('alerts/setFilter', update)
     },
     setSort(sort) {
       this.$store.dispatch('alerts/setPagination', {

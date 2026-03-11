@@ -83,6 +83,8 @@
             <v-select
               v-model="filterSeverity"
               :items="severityList"
+              item-text="text"
+              item-value="value"
               small-chips
               :placeholder="$t('AllSeverities')"
               :label="$t('Severity')"
@@ -101,6 +103,8 @@
             <v-select
               v-model="filterStatus"
               :items="statusList"
+              item-text="text"
+              item-value="value"
               small-chips
               :placeholder="$t('AllStatuses')"
               :label="$t('Status')"
@@ -108,25 +112,6 @@
               outline
               dense
               :hint="$t('StatusDescription')"
-              persistent-hint
-            />
-          </v-flex>
-
-          <v-flex
-            v-if="$config.customer_views"
-            xs12
-            class="pb-0"
-          >
-            <v-select
-              v-model="filterCustomer"
-              :items="currentCustomers"
-              :menu-props="{ maxHeight: '400' }"
-              :placeholder="$t('AllCustomers')"
-              :label="$t('Customer')"
-              multiple
-              outline
-              dense
-              :hint="$t('CustomerDescription')"
               persistent-hint
             />
           </v-flex>
@@ -145,24 +130,6 @@
               outline
               dense
               :hint="$t('ServiceDescription')"
-              persistent-hint
-            />
-          </v-flex>
-
-          <v-flex
-            xs12
-            class="pb-0"
-          >
-            <v-select
-              v-model="filterGroup"
-              :items="currentGroups"
-              :menu-props="{ maxHeight: '400' }"
-              :placeholder="$t('AllGroups')"
-              :label="$t('Group')"
-              multiple
-              outline
-              dense
-              :hint="$t('GroupDescription')"
               persistent-hint
             />
           </v-flex>
@@ -364,10 +331,20 @@ export default {
       return this.$config.environments
     },
     severityList() {
-      let severityMap = this.$config.alarm_model.severity
-      return Object.keys(severityMap).sort((a, b) => {
-        return severityMap[a] - severityMap[b]
-      })
+      let severities = []
+      const severityMap = this.$config.alarm_model.severity
+      if (severityMap) {
+        severities = Object.keys(severityMap).sort((a, b) => severityMap[a] - severityMap[b])
+      } else {
+        severities = ['critical', 'major', 'minor', 'warning', 'indeterminate']
+      }
+      const ignoredSeverities = ['debug', 'trace', 'informational', 'info', 'normal', 'cleared', 'ok']
+      return severities
+        .filter(s => !ignoredSeverities.includes(s.toLowerCase()))
+        .map(s => ({
+          text: s.charAt(0).toUpperCase() + s.slice(1),
+          value: s
+        }))
     },
     statusList() {
       // FIXME - remove defaultStatusMap from v7.0 onwards
@@ -382,18 +359,18 @@ export default {
         'unknown': 'H'
       }
       let statusMap = this.$config.alarm_model.status || defaultStatusMap
-      return Object.keys(statusMap).sort((a, b) => {
-        return statusMap[a].localeCompare(statusMap[b])
-      })
-    },
-    currentCustomers() {
-      return this.$store.getters['customers/customers']
+      const allowedStatuses = ['open', 'ack', 'shelved', 'closed']
+      return Object.keys(statusMap)
+        .filter(status => allowedStatuses.includes(status))
+        .sort((a, b) => {
+          return statusMap[a].localeCompare(statusMap[b])
+        }).map(status => ({
+          text: this.$t('status_' + status),
+          value: status
+        }))
     },
     currentServices() {
       return this.$store.getters['alerts/services']
-    },
-    currentGroups() {
-      return this.$store.getters['alerts/groups']
     },
     filterText: {
       get() {
@@ -435,36 +412,7 @@ export default {
         })
       }
     },
-    filterCustomer: {
-      get() {
-        return this.$store.state.reports.filter.customer
-      },
-      set(value) {
-        this.$store.dispatch('reports/setFilter', {
-          customer: value.length > 0 ? value : null
-        })
-      }
-    },
-    filterService: {
-      get() {
-        return this.$store.state.reports.filter.service
-      },
-      set(value) {
-        this.$store.dispatch('reports/setFilter', {
-          service: value.length > 0 ? value : null
-        })
-      }
-    },
-    filterGroup: {
-      get() {
-        return this.$store.state.reports.filter.group
-      },
-      set(value) {
-        this.$store.dispatch('reports/setFilter', {
-          group: value.length > 0 ? value : null
-        })
-      }
-    },
+
     filterDateRange: {
       get() {
         return this.$store.state.reports.filter.dateRange[0] > 0
@@ -498,11 +446,7 @@ export default {
   },
   created() {
     this.getEnvironments()
-    if (this.$config.customer_views) {
-      this.getCustomers()
-    }
     this.getServices()
-    this.getGroups()
 
     if (this.filterDateRange[0] === 0) {
       this.period = this.getDateRange(
@@ -516,14 +460,8 @@ export default {
     getEnvironments() {
       this.$store.dispatch('alerts/getEnvironments')
     },
-    getCustomers() {
-      this.$store.dispatch('customers/getCustomers')
-    },
     getServices() {
       this.$store.dispatch('alerts/getServices')
-    },
-    getGroups() {
-      this.$store.dispatch('alerts/getGroups')
     },
     getDateRange(from, to) {
       let t1 = moment.unix(from).utc()

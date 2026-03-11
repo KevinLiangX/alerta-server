@@ -299,8 +299,11 @@ export const zh = {
   // Reports
   Top: 'Top',
   Flapping: '频繁抖动',
+  Offender: '高频',
   Offenders: '高频告警',
   Standing: '长期告警',
+  Longest: '最长',
+  Changes: '变更',
   TopFlappingDescription: '频繁变更严重级别的告警来源（最不稳定的告警）。',
   TopOffendersDescription: '产生最多告警和重复告警的高频告警来源。',
   TopStandingDescription: '持续处于活跃状态时间最长的告警来源。',

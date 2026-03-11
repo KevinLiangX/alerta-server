@@ -13,6 +13,8 @@
       :style="columnWidths"
       sort-icon="arrow_drop_down"
       select-all
+      :no-data-text="$t('NoDataAvailable')"
+      :no-results-text="$t('NoDataAvailable')"
     >
       <template
         slot="items"
